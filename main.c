@@ -49,8 +49,27 @@ void combine(int i, char dir)
         }
     }
 
-    if (dir=='u') 
+    if (dir=='u') {
+        int n=0;
+        for (int j=0;j<N;j++) { if (A[j][i]!=-1) { n++; } }
+        int pos[n];
+        int j3=0;
+        for (int j2=0;j2<N;j++) { if (A[j2][i]!=-1) { pos[j3]=j2; j3++; } }
 
+        for (int k=0;k<n-1;k++) {
+            if (test(A[pos[k]][i],A[pos[k+1]][i])) {
+                A[pos[k]][i] = f(A[pos[k]][i],A[pos[k+1]][i])
+                A[pos[k+1]][i] = -1;
+                k++;
+            }
+        }
+    }
+
+    if (dir=='d') {
+        int n=0;
+        for (int j=0;j<N;j++) { if (A
+        
+    }
 }
 
 
