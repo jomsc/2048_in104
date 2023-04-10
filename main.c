@@ -92,7 +92,6 @@ void move(int N, char dir) {
 
 
 int main() {
-    srand(time(NULL));
     int N=4;
     int** A=malloc(sizeof(int)*N*N);
 
