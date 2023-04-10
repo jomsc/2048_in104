@@ -6,14 +6,14 @@ int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
 
 
-void combine(int i, char dir)
+void combine(int i, char dir, int N)
 {
     if (dir=='r') {
         int n=0;
         for (int j=0;j<N;j++) { if (A[i][j]!=-1) { n++; } }
         int pos[n];
         int j3=0;
-        for (int j2=N-1;j2<0;j2--) { if (A[i][j2]!=-1) { pos[j3]=j2; j3++; } }
+        for (int j2=N-1;j2>0;j2--) { if (A[i][j2]!=-1) { pos[j3]=j2; j3++; } }
         
         for (int k=0;k<n-1;k++) { 
             if (test(A[i][pos[k]],A[i][pos[k+1]])) {
@@ -24,7 +24,7 @@ void combine(int i, char dir)
         }
     }
 
-    if (dir=='g') {
+    if (dir=='l') {
         int n=0;
         for (int j=0;j<N;j++) { if (A[i][j]!=-1) { n++; } }
         int pos[n];
@@ -58,19 +58,30 @@ void combine(int i, char dir)
 
     if (dir=='d') {
         int n=0;
-        for (int j=0;j<N;j++) { if (A
-        
+        for (int j=0;j<N;j++) { if (A[j][i]!=-1) { n++; } }
+        int pos[n];
+        int j3=0;
+        for (int j2=N-1;j2>0;j2--) { if (A[j2][i]!=-1) { pos[j3]=j2; j3++; } }
+
+        for (int k=0;k<n-1;k++) {
+            if (test(A[pos[k]][i],A[pos[k+1]][i])) {
+                A[pos[k]][i] = f(A[pos[k]][i],A[pos[k+1]][i])
+                A[pos[k+1]][i] = -1;
+                k++;
+            }
+        }
     }
 }
 
-    void move(int N) {
+void collapse(int i, char dir, int N) {}
 
-        for (int i=0;i<=N;i++)
-        {
-            combine(i,'r');
-            collapse(i,'r');
-        }
+void move(int N, char dir) {
+    for (int i=0;i<=N;i++)
+    {
+        combine(i,dir,N);
+        collapse(i,dir,N);
     }
+}
 
 
 
