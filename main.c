@@ -2,18 +2,9 @@
 #include <time.h>
 #include <stdlib.h>
 
-bool test(int x, int y) { return (x==y); }
+int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
 
-
-void move(int N) {
-
-    for (int i=0;i<=N;i++)
-    {
-        combine(i,'r');
-        collapse(i,'r');
-    }
-}
 
 void combine(int i, char dir)
 {
@@ -72,7 +63,14 @@ void combine(int i, char dir)
     }
 }
 
+    void move(int N) {
 
+        for (int i=0;i<=N;i++)
+        {
+            combine(i,'r');
+            collapse(i,'r');
+        }
+    }
 
 
 
