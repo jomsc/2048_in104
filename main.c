@@ -73,7 +73,10 @@ void combine(int i, char dir, int N)
     }
 }
 
-void collapse(int i, char dir, int N) {}
+void collapse(int i, char dir, int N)
+{
+    
+}
 
 void move(int N, char dir) {
     for (int i=0;i<=N;i++)
