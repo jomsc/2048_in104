@@ -11,9 +11,9 @@ void combine(int i, char dir, int N)
     if (dir=='r') {
         int n=0;
         for (int j=0;j<N;j++) { if (A[i][j]!=-1) { n++; } }
-        int pos[n];
+        int* pos=malloc(sizeof(int)*n);
         int j3=0;
-        for (int j2=N-1;j2>0;j2--) { if (A[i][j2]!=-1) { pos[j3]=j2; j3++; } }
+        for (int j2=N-1;j2>=0;j2--) { if (A[i][j2]!=-1) { pos[j3]=j2; j3++; } }
         
         for (int k=0;k<n-1;k++) { 
             if (test(A[i][pos[k]],A[i][pos[k+1]])) {
@@ -22,12 +22,14 @@ void combine(int i, char dir, int N)
                 k++;
             }
         }
+
+        free(pos);
     }
 
     if (dir=='l') {
         int n=0;
         for (int j=0;j<N;j++) { if (A[i][j]!=-1) { n++; } }
-        int pos[n];
+        int* pos=malloc(sizeof(int)*n);
         int j3=0;
         for (int j2=0;j2<N;j++) { if (A[i][j2]!=-1) { pos[j3]=j2; j3++; } }
 
@@ -38,12 +40,14 @@ void combine(int i, char dir, int N)
                 k++;
             }
         }
+
+        free(pos);
     }
 
     if (dir=='u') {
         int n=0;
         for (int j=0;j<N;j++) { if (A[j][i]!=-1) { n++; } }
-        int pos[n];
+        int* pos=malloc(sizeof(int)*n);
         int j3=0;
         for (int j2=0;j2<N;j++) { if (A[j2][i]!=-1) { pos[j3]=j2; j3++; } }
 
@@ -54,14 +58,16 @@ void combine(int i, char dir, int N)
                 k++;
             }
         }
+
+        free(pos);
     }
 
     if (dir=='d') {
         int n=0;
         for (int j=0;j<N;j++) { if (A[j][i]!=-1) { n++; } }
-        int pos[n];
+        int* pos=malloc(sizeof(int)*n);
         int j3=0;
-        for (int j2=N-1;j2>0;j2--) { if (A[j2][i]!=-1) { pos[j3]=j2; j3++; } }
+        for (int j2=N-1;j2>=0;j2--) { if (A[j2][i]!=-1) { pos[j3]=j2; j3++; } }
 
         for (int k=0;k<n-1;k++) {
             if (test(A[pos[k]][i],A[pos[k+1]][i])) {
@@ -70,12 +76,65 @@ void combine(int i, char dir, int N)
                 k++;
             }
         }
+
+        free(pos);
     }
 }
 
 void collapse(int i, char dir, int N)
 {
-    printf("test");//
+    int p=0;
+    if (dir=='r')
+    {
+        for (int j=0;j<N;j++) { if (A[i][j]!=-1) { p++; } }
+        int* L=malloc(sizeof(int)*p);
+        for (int j=N-1;j>=0;j--) { if (A[i][j]!=-1) { L[j]=A[i][j]; } }
+        for (int j=0;j<N;j++)
+        {
+            if (j<p) {  A[i][N-j-1]=L[j];  }
+            else { A[i][N-j-1]=-1; }
+        }
+
+    }
+
+    if (dir=='l')
+    {
+        for (int j=0;j<N;j++) { if (A[i][j]!=-1) { p++; } }
+        int* L=malloc(sizeof(int)*p);
+        for (int j=0;j<N;j++) { if (A[i][j]!=-1) { L[j]=A[i][j]; } }
+        for (int j=0;j<N;j++)
+        {
+            if (j<p) {  A[i][j]=L[j];  }
+            else { A[i][j]=-1; }
+        }
+
+    }
+
+    if (dir=='d')
+    {
+        for (int j=0;j<N;j++) { if (A[j][i]!=-1) { p++; } }
+        int* L=malloc(sizeof(int)*p);
+        for (int j=N-1;j>=0;j--) { if (A[j][i]!=-1) { L[j]=A[j][i]; } }
+        for (int j=0;j<N;j++)
+        {
+            if (j<p) {  A[N-j-1][i]=L[j];  }
+            else { A[N-j-1][i]=-1; }
+        }
+
+    }
+
+    if (dir=='u')
+    {
+        for (int j=0;j<N;j++) { if (A[j][i]!=-1) { p++; } }
+        int* L=malloc(sizeof(int)*p);
+        for (int j=0;j<N;j++) { if (A[j][i]!=-1) { L[j]=A[j][i]; } }
+        for (int j=0;j<N;j++)
+        {
+            if (j<p) {  A[j][i]=L[j];  }
+            else { A[j][i]=-1; }
+        }
+
+    }
 }
 
 void move(int N, char dir) {
