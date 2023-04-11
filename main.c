@@ -145,15 +145,25 @@ void move(int N, char dir) {
     }
 }
 
+void spawn(int N)
+{
+    int x = rand()%N;
+    int y = rand()%N;
 
+    while (A[x][y] != -1)
+    {
+        x = rand()%N;
+        y = rand()%N;
+    }
 
-
-
-
-
+    int v=rand()%3;
+    if (v==2) { A[x][y] = 4; }
+    else { A[x][y] = 2; }
+}
 
 
 int main() {
+    srand(time(NULL));
     int N=4;
     int** A=malloc(sizeof(int)*N*N);
 
