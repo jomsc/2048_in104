@@ -75,7 +75,7 @@ void combine(int i, char dir, int N)
 
 void collapse(int i, char dir, int N)
 {
-    printf("test");
+    printf("test");//
 }
 
 void move(int N, char dir) {
