@@ -161,13 +161,42 @@ void spawn(int N)
     else { A[x][y] = 2; }
 }
 
+void display(int N)
+{
+    for (int i=0;i<N;i++)
+    {
+        for (int j=0;j<N;j++)
+        {
+            printf("%d ",A[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+char get_input()
+{
+    char a;
+    int read;
+    read = scanf("%c",&a);
+    return a;
+}
+
+
 
 int main() {
     srand(time(NULL));
     int N=4;
     int** A=malloc(sizeof(int)*N*N);
 
-    
+    char dir;
+
+    for (int i=0;i<50;i++)
+    {
+        display(N);
+        dir = get_input();
+        move(N,dir);
+        spawn(N);
+    }
 
     return 0;
 }
