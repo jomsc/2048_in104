@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
@@ -163,42 +164,108 @@ void display(int N, int* A)
     printf("\n\n\n");
 }
 
-char get_input()
-{
-    char a;
-    int read;
-    read = scanf("%c\n",&a);
-    return a;
-}
 
-int main() {
+int main()
+{
+    system("clear");
+    printf("\n\n\n\n\n\n\n\n\n");
+    printf("                222222222222222           000000000             444444444        888888888\n");
+    printf("                2:::::::::::::::22      00:::::::::00          4::::::::4      88:::::::::88\n");
+    printf("                2::::::222222:::::2   00:::::::::::::00       4:::::::::4    88:::::::::::::88\n");
+    printf("                2222222     2:::::2  0:::::::000:::::::0     4::::44::::4   8::::::88888::::::8\n");
+    printf("                            2:::::2  0::::::0   0::::::0    4::::4 4::::4   8:::::8     8:::::8\n");
+    printf("                            2:::::2  0:::::0     0:::::0   4::::4  4::::4   8:::::8     8:::::8\n");
+    printf("                         2222::::2   0:::::0     0:::::0  4::::4   4::::4    8:::::88888:::::8\n");
+    printf("                    22222::::::22    0:::::0     0:::::0 4::::444444::::444   8:::::::::::::8\n");
+    printf("                  22::::::::222      0:::::0     0:::::0 4::::::::::::::::4  8:::::88888:::::8\n");
+    printf("                 2:::::22222         0:::::0     0:::::0 4444444444:::::444 8:::::8     8:::::8\n");
+    printf("                2:::::2              0:::::0     0:::::0           4::::4   8:::::8     8:::::8\n");
+    printf("                2:::::2              0::::::0   0::::::0           4::::4   8:::::8     8:::::8\n");
+    printf("                2:::::2       222222 0:::::::000:::::::0           4::::4   8::::::88888::::::8\n");
+    printf("                2::::::2222222:::::2  00:::::::::::::00          44::::::44  88:::::::::::::88\n");
+    printf("                2::::::::::::::::::2    00:::::::::00            4::::::::4    88:::::::::88\n");
+    printf("                22222222222222222222      000000000              4444444444      888888888\n\n\n");
+    printf("                                Par Clara Beaugrand et Joseph Mouscadet\n");
+    sleep(5);
+    system("clear");
+
+
+
+
+
+
+
     srand(time(NULL));
     int N=4;
     int* A=malloc(sizeof(int)*N*N);
     for (int i=0;i<N*N;i++) { A[i]=-1; }
 
-
+    char n;
     char dir;
-
+    system("stty -icanon");
     spawn(N,A);
-    display(N, A);
 
-
-    for (int i=0;i<10;i++)
+    int playing=1;
+    while(playing==1)
     {
-        dir = get_input();
+        system("clear");
+        printf("\n---------------------------------\n");
+        for(int i=0;i<N;i++)
+        {
+            printf("|");
+            for(int j=0;j<N;j++)
+            {
+                if(A[N*i+j]==-1)
+                    printf("       |");
+                else
+                    printf("%5d  |",A[N*i+j]);
+            }
+            printf("\n---------------------------------\n");
+        }
+        printf("\n\nz,s,q,d-->up down left right ；m to end the game！\n");
 
-        if (dir=='q') { break; }
 
-        printf("direction entree : %c\n",dir);
+        n=getchar();
+        switch(n)
+        {
+            case 'z': //up
+                dir='u';
+                break;
+            case 's': //down
+                dir='d';
+                break;
+            case 'q': //left
+                dir='l';
+                break;
+            case 'd': //right
+                dir='r';
+                break;
+            case 'm': //ESC
+                printf("\n Exit Game ！\n");
+                playing=0;
+                break;
+            default:
+                dir=' ';
+                break;
+        }
+
         move(N,dir,A);
-        display(N, A);
-        printf("s\n");
         spawn(N,A);
-        display(N, A);
+
+        //win or not
+        for(int i=0;i<N;i++)
+        {
+            for(int j=0;j<N;j++)
+            {
+                if(A[N*i+j]==2048)//2048 win
+                {
+                    printf("\n You win！\n");
+                    return 1;//end
+                }
+            }
+        }
     }
 
-    free(A);
     return 0;
 }
 
