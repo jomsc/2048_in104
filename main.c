@@ -181,7 +181,7 @@ char get_input()
     return a;
 }
 
-
+//dzaiodjaz
 
 int main() {
     srand(time(NULL));
