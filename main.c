@@ -87,7 +87,7 @@ void collapse(int i, char dir, int N, int* A)
     int p=0;
     if (dir=='r') {
         for (int j=0;j<N;j++) {
-            if (A[N*i+N-1-j]>0) {
+            if (A[N*i+N-1-j]!=-1) {
                 A[i*N+ N - 1 - p] = A[N * i + N - 1 - j];
                 if (j!=p) { A[N * i + N - 1 - j] = -1; }
                 p++;
@@ -97,7 +97,7 @@ void collapse(int i, char dir, int N, int* A)
 
     if (dir=='l') {
         for (int j=0;j<N;j++) {
-            if (A[N*i+j]>0) {
+            if (A[N*i+j]!=-1) {
                 A[i*N+p] = A[N * i + j];
                 if (j!=p) { A[N * i + j] = -1; }
                 p++;
@@ -107,7 +107,7 @@ void collapse(int i, char dir, int N, int* A)
 
     if (dir=='u') {
         for (int j=0;j<N;j++) {
-            if (A[N*j+i]>0) {
+            if (A[N*j+i]!=-1) {
                 A[N*p+i] = A[N*j+i];
                 if (j!=p) { A[N*j+i] = -1; }
                 p++;
@@ -117,7 +117,7 @@ void collapse(int i, char dir, int N, int* A)
 
     if (dir=='d') {
         for (int j=0;j<N;j++) {
-            if (A[i+N*(N-1-j)] > 0) {
+            if (A[i+N*(N-1-j)]!=-1) {
                 A[i+N*(N-1-p)] = A[i+N*(N-1-j)];
                 if (j!=p) { A[i+N*(N-1-j)] = -1; }
                 p++;
