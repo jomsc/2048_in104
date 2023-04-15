@@ -145,8 +145,8 @@ void spawn(int N, int* A)
         y = rand()%N;
     }
 
-    int v=rand()%3;
-    if (v==2) { A[x*N+y] = 4; }
+    int v=rand()%6;
+    if (v==5) { A[x*N+y] = 4; }
     else { A[x*N+y] = 2; }
 }
 
