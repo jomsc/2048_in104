@@ -1,0 +1,50 @@
+"/Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8109.222/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8109.222/CLion.app/Contents/bin/ninja/mac/ninja" -DCMAKE_C_COMPILER=gcc -G Ninja -S /Users/phesox/CLionProjects/2048_in104 -B /Users/phesox/CLionProjects/2048_in104/cmake-build-debug
+
+-- CMAKE_BINARY_DIR: /Users/phesox/CLionProjects/2048_in104/cmake-build-debug
+-- CMAKE_SOURCE_DIR: /Users/phesox/CLionProjects/2048_in104
+-- CMAKE_COMMAND: /Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8109.222/CLion.app/Contents/bin/cmake/mac/bin/cmake
+-- CMAKE_VERSION: 3.25.2
+-- CMAKE_C_COMPILER: gcc
+-- CMAKE_PROJECT_NAME: 
+-- CMAKE_FINDCMAKE: /Users/phesox/CLionProjects/2048_in104/CMAKE
+-- The C compiler identification is AppleClang 14.0.0.14000029
+-- The CXX compiler identification is AppleClang 14.0.0.14000029
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+
+-- SOURCE entry point : src/main.c
+
+-- Found SDL2: /usr/local/lib/libSDL2main.a;/usr/local/lib/libSDL2.dylib;-framework Cocoa  
+
+-- FINDING SDL2
+-- SDL2_FOUND: TRUE
+-- SDL2_INCLUDE_DIR:/usr/local/include/SDL2
+-- SDL2_LIBRARY: /usr/local/lib/libSDL2main.a/usr/local/lib/libSDL2.dylib-framework Cocoa
+-- Found SDL2_IMAGE: /usr/local/lib/libSDL2_image.dylib  
+
+-- FINDING SDL2_IMAGE
+-- SDL2_IMAGE_FOUND: TRUE
+-- SDL2_IMAGE_INCLUDE_DIR: /usr/local/include/SDL2
+-- SDL2_IMAGE_LIBRARY: /usr/local/lib/libSDL2_image.dylib
+-- Found SDL2TTF: /usr/local/lib/libSDL2_ttf.dylib;/usr/local/lib/libSDL2_ttf.dylib;-framework Cocoa  
+
+-- FINDING SDL2TTF
+-- SDL2TTF_FOUND: TRUE
+-- SDL2TTF_INCLUDE_DIR: /usr/local/include/SDL2
+-- SDL2TTF_LIBRARY: /usr/local/lib/libSDL2_ttf.dylib/usr/local/lib/libSDL2_ttf.dylib-framework Cocoa
+
+-- Found SDL2Mixer: /usr/local/lib/libSDL2_mixer.dylib  
+-- FINDING SDL2Mixer
+-- SDL2Mixer_FOUND: TRUE
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/phesox/CLionProjects/2048_in104/cmake-build-debug

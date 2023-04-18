@@ -2,6 +2,17 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
+#include <SDL_mixer.h>
+
+const int SCREEN_WIDTH = 1024;
+const int SCREEN_HEIGHT = 768;
+
+
+
+
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
@@ -150,23 +161,29 @@ void spawn(int N, int* A)
     else { A[x*N+y] = 2; }
 }
 
-void display(int N, int* A)
-{
-    for (int i=0;i<N;i++)
-    {
-        for (int j=0;j<N;j++)
-        {
-            if (A[i*N+j]!=-1) { printf("%d|",A[i*N+j]); }
-            else { printf(" |"); }
-        }
-        printf("\n");
-    }
-    printf("\n\n\n");
-}
-
-
 int main()
 {
+    SDL_Window* window = NULL;
+    SDL_Surface* screenSurface = NULL;
+
+    if (SDL_Init(SDL_INIT_VIDEO)<0) { printf("SDL Init Error !"); }
+    else {
+        window = SDL_CreateWindow("Tuto SDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+        if (window == NULL) { printf("Window could not be created !"); }
+        else {
+            screenSurface = SDL_GetWindowSurface(window);
+            SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
+            SDL_UpdateWindowSurface(window);
+            SDL_Event e;
+            int quit = 0;
+
+            while (quit==0) { while( SDL_PollEvent( &e ) ){ if( e.type == SDL_QUIT ) quit = 1; } }
+        }
+    }
+
+
+
+    /*
     system("clear");
     printf("\n\n\n\n\n\n\n\n\n");
     printf("                222222222222222           000000000             444444444        888888888\n");
@@ -252,20 +269,17 @@ int main()
         move(N,dir,A);
         spawn(N,A);
 
-        //win or not
-        for(int i=0;i<N;i++)
+        for(int i=0;i<N*N;i++)
         {
-            for(int j=0;j<N;j++)
-            {
-                if(A[N*i+j]==2048)//2048 win
-                {
-                    printf("\n You win！\n");
-                    return 1;//end
-                }
+            if(A[i]==2048) {
+                printf("\n You win！\n");
+                return 1;//end
             }
         }
-    }
+    }*/
+
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }
-
