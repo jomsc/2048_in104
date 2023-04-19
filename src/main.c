@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include <string.h>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 640;
@@ -139,25 +141,92 @@ void move(int N, char dir, int* A) {
 }
 void spawn(int N, int* A)
 {
-    int x = rand()%N;
-    int y = rand()%N;
+    int a=0;
+    for (int i=0;i<N*N;i++) { if (A[i] != -1) { a++; }}
+    if (a<N*N) {
+        int x = rand()%N;
+        int y = rand()%N;
 
-    while (A[x*N+y] != -1)
-    {
-        x = rand()%N;
-        y = rand()%N;
+        while (A[x*N+y] != -1)
+        {
+            x = rand()%N;
+            y = rand()%N;
+        }
+
+        int v=rand()%6;
+        if (v==5) { A[x*N+y] = 4; }
+        else { A[x*N+y] = 2; }
     }
-
-    int v=rand()%6;
-    if (v==5) { A[x*N+y] = 4; }
-    else { A[x*N+y] = 2; }
 }
 
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
+SDL_Texture* mTexture = NULL;
 
+SDL_Texture* loadTexture(char *path) {
+    SDL_Texture* newTexture = NULL;
+
+    SDL_Surface* loadedSurface = IMG_Load(path);
+
+    if( loadedSurface == NULL ) {
+        printf( "Unable to load image %s! SDL_image Error: %s\n", path, IMG_GetError() );
+    }
+
+    else
+    {
+        //Create texture from surface pixels
+        newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
+        if( newTexture == NULL )
+        {
+            printf( "Unable to create texture from %s! SDL Error: %s\n", path, SDL_GetError() );
+        }
+
+        //Get rid of old loaded surface
+        SDL_FreeSurface( loadedSurface );
+    }
+
+    return newTexture;
+}
+bool loadMedia_rect()
+{
+    //Loading success flag
+    bool success = true;
+
+    //Load PNG texture
+    gTexture = loadTexture( "/Users/phesox/CLionProjects/2048_in104/assets/textures/rect.png" );
+    if( gTexture == NULL )
+    {
+        printf( "Failed to load texture image!\n" );
+        success = false;
+    }
+
+    return success;
+}
+bool loadMedia_number(int number)
+{
+    //Loading success flag
+    bool success = true;
+    char textureText[20];
+    if (number != -1) { sprintf(textureText, "%d", number); }
+    else { strcpy(textureText, "");  }
+
+    char path[100];
+    strcat(path, "/Users/phesox/CLionProjects/2048_in104/assets/textures/numbers/");
+    strcat(path,textureText);
+    strcat(path,".png");
+
+    //Load PNG texture
+    mTexture = loadTexture(path);
+    if( mTexture == NULL )
+    {
+        printf( "Failed to load texture image!\n" );
+        success = false;
+    }
+
+    return success;
+}
 bool init()
 {
     //Initialization flag
@@ -205,47 +274,13 @@ bool init()
                     printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
                     success = false;
                 }
+
+                if (TTF_Init()==-1) {
+                    printf("SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
+                    success = false;
+                }
             }
         }
-    }
-
-    return success;
-}
-SDL_Texture* loadTexture(char *path) {
-    SDL_Texture* newTexture = NULL;
-
-    SDL_Surface* loadedSurface = IMG_Load(path);
-
-    if( loadedSurface == NULL ) {
-        printf( "Unable to load image %s! SDL_image Error: %s\n", path, IMG_GetError() );
-    }
-
-    else
-    {
-        //Create texture from surface pixels
-        newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
-        if( newTexture == NULL )
-        {
-            printf( "Unable to create texture from %s! SDL Error: %s\n", path, SDL_GetError() );
-        }
-
-        //Get rid of old loaded surface
-        SDL_FreeSurface( loadedSurface );
-    }
-
-    return newTexture;
-}
-bool loadMedia()
-{
-    //Loading success flag
-    bool success = true;
-
-    //Load PNG texture
-    gTexture = loadTexture( "/Users/phesox/CLionProjects/2048_in104/assets/textures/rect.png" );
-    if( gTexture == NULL )
-    {
-        printf( "Failed to load texture image!\n" );
-        success = false;
     }
 
     return success;
@@ -253,21 +288,72 @@ bool loadMedia()
 void wclose()
 {
     SDL_DestroyTexture(gTexture);
+    SDL_DestroyTexture(mTexture);
     SDL_DestroyRenderer( gRenderer);
     SDL_DestroyWindow( gWindow);
     gWindow = NULL;
     gRenderer = NULL;
     gTexture = NULL;
+    mTexture = NULL;
 
-    //Quit SDL subsystems
     IMG_Quit();
     SDL_Quit();
+}
+
+void game_display(int* A, int N) {
+    int margin = 20;
+    int rect_size = 100;
+    int* posx = malloc(sizeof(int)*N*N);
+    int* posy = malloc(sizeof(int)*N*N);
+
+    for (int i=0;i<N;i++) {
+        for (int j=0;j<N;j++) {
+            posy[N*i+j] = margin+(rect_size+margin)*i;
+            posx[N*i+j] = margin+(rect_size+margin)*j;
+        }
+    }
+
+    SDL_SetRenderDrawColor( gRenderer, 0x80, 0x80, 0x80, 0xFF );
+    SDL_RenderClear(gRenderer);
+
+    for (int i=0;i<N;i++) {
+        for (int j=0;j<N;j++) {
+            SDL_Rect textureRect = { posx[N*i+j], posy[N*i+j], rect_size, rect_size};
+            SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+
+            int number = A[N*i+j];
+            if (number != -1) {
+                if (!loadMedia_number(number)) { printf("could not load number %d", number); }
+                else {
+                    SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                    SDL_RenderCopy(gRenderer, mTexture, NULL, &textureRect_text);
+                }
+            }
+            else {
+                SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect_text);
+            }
+        }
+    }
+
+    SDL_RenderPresent(gRenderer);
+
+    free(posx);
+    free(posy);
 }
 
 
 
 int main()
 {
+
+    srand(time(NULL));
+    int N=4;
+    int* A=malloc(sizeof(int)*N*N);
+    for (int i=0;i<N*N;i++) { A[i]=-1; }
+    char dir;
+    spawn(N,A);
+
     if( !init() )
     {
         printf( "Failed to initialize!\n" );
@@ -275,7 +361,7 @@ int main()
     else
     {
         //Load media
-        if( !loadMedia() )
+        if(!loadMedia_rect())
         {
             printf( "Failed to load media!\n" );
         }
@@ -286,116 +372,49 @@ int main()
 
             while( !quit )
             {
+
                 //Handle events on queue
                 while( SDL_PollEvent( &e ) != 0 )
                 {
+                    game_display(A, N);
                     //User requests quit
                     if( e.type == SDL_QUIT )
                     {
                         quit = true;
                     }
+                    else if (e.type == SDL_KEYDOWN) {
+                        switch (e.key.keysym.sym) {
+                            case SDLK_z:
+                                dir='u';
+                                printf("dir %c", dir);
+                                break;
+                            case SDLK_s:
+                                dir='d';
+                                printf("dir %c", dir);
+                                break;
+                            case SDLK_q:
+                                dir='l';
+                                printf("dir %c", dir);
+                                break;
+                            case SDLK_d:
+                                dir='r';
+                                printf("dir %c", dir);
+                                break;
+                            default:
+                                dir=' ';
+                        }
+                        move(N,dir,A);
+                        spawn(N,A);
+                    }
+
+
                 }
 
-                SDL_SetRenderDrawColor( gRenderer, 0x80, 0x80, 0x80, 0xFF );
-                SDL_RenderClear(gRenderer);
-
-                SDL_Rect textureRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-
-                SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
-
-                SDL_RenderPresent(gRenderer);
             }
         }
     }
 
-
-
-    /*
-    system("clear");
-    printf("\n\n\n\n\n\n\n\n\n");
-    printf("                222222222222222           000000000             444444444        888888888\n");
-    printf("                2:::::::::::::::22      00:::::::::00          4::::::::4      88:::::::::88\n");
-    printf("                2::::::222222:::::2   00:::::::::::::00       4:::::::::4    88:::::::::::::88\n");
-    printf("                2222222     2:::::2  0:::::::000:::::::0     4::::44::::4   8::::::88888::::::8\n");
-    printf("                            2:::::2  0::::::0   0::::::0    4::::4 4::::4   8:::::8     8:::::8\n");
-    printf("                            2:::::2  0:::::0     0:::::0   4::::4  4::::4   8:::::8     8:::::8\n");
-    printf("                         2222::::2   0:::::0     0:::::0  4::::4   4::::4    8:::::88888:::::8\n");
-    printf("                    22222::::::22    0:::::0     0:::::0 4::::444444::::444   8:::::::::::::8\n");
-    printf("                  22::::::::222      0:::::0     0:::::0 4::::::::::::::::4  8:::::88888:::::8\n");
-    printf("                 2:::::22222         0:::::0     0:::::0 4444444444:::::444 8:::::8     8:::::8\n");
-    printf("                2:::::2              0:::::0     0:::::0           4::::4   8:::::8     8:::::8\n");
-    printf("                2:::::2              0::::::0   0::::::0           4::::4   8:::::8     8:::::8\n");
-    printf("                2:::::2       222222 0:::::::000:::::::0           4::::4   8::::::88888::::::8\n");
-    printf("                2::::::2222222:::::2  00:::::::::::::00          44::::::44  88:::::::::::::88\n");
-    printf("                2::::::::::::::::::2    00:::::::::00            4::::::::4    88:::::::::88\n");
-    printf("                22222222222222222222      000000000              4444444444      888888888\n\n\n");
-    printf("                                Par Clara Beaugrand et Joseph Mouscadet\n");
-    sleep(5);
-    system("clear");
-
-
-
-
-
-
-
-    srand(time(NULL));
-    int N=4;
-    int* A=malloc(sizeof(int)*N*N);
-    for (int i=0;i<N*N;i++) { A[i]=-1; }
-
-    char n;
-    char dir;
-    system("stty -icanon");
-    spawn(N,A);
-
-    int playing=1;
-    while(playing==1)
-    {
-        system("clear");
-        printf("\n---------------------------------\n");
-        for(int i=0;i<N;i++)
-        {
-            printf("|");
-            for(int j=0;j<N;j++)
-            {
-                if(A[N*i+j]==-1)
-                    printf("       |");
-                else
-                    printf("%5d  |",A[N*i+j]);
-            }
-            printf("\n---------------------------------\n");
-        }
-        printf("\n\nz,s,q,d-->up down left right ；m to end the game！\n");
-
-
-        n=getchar();
-        switch(n)
-        {
-            case 'z': //up
-                dir='u';
-                break;
-            case 's': //down
-                dir='d';
-                break;
-            case 'q': //left
-                dir='l';
-                break;
-            case 'd': //right
-                dir='r';
-                break;
-            case 'm': //ESC
-                printf("\n Exit Game ！\n");
-                playing=0;
-                break;
-            default:
-                dir=' ';
-                break;
-        }
-
-        move(N,dir,A);
-        spawn(N,A);
-
+        /*
         for(int i=0;i<N*N;i++)
         {
             if(A[i]==2048) {
