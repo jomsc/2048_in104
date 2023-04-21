@@ -5,13 +5,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <SDL.h>
-#include <SDL_ttf.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 #include <string.h>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 640;
+
+enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, SETTINGS };
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
@@ -133,8 +134,7 @@ void collapse(int i, char dir, int N, int* A)
     }
 }
 void move(int N, char dir, int* A) {
-    for (int i=0;i<N;i++)
-    {
+    for (int i=0;i<N;i++) {
         combine(i,dir,N,A);
         collapse(i,dir,N,A);
     }
@@ -159,6 +159,9 @@ void spawn(int N, int* A)
     }
 }
 
+bool isInside(int x, int y, int w, int h, int a, int b) {
+    return ((x<=(a+w) && x>=a) && (y<=(b+h) && y>= b));
+}
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -227,6 +230,16 @@ bool loadMedia_number(int number)
 
     return success;
 }
+bool loadMedia(char* path) {
+    bool success = true;
+    gTexture = loadTexture(path);
+    if( gTexture == NULL )
+    {
+        printf( "Failed to load texture image!\n" );
+        success = false;
+    }
+    return success;
+}
 bool init()
 {
     //Initialization flag
@@ -274,11 +287,6 @@ bool init()
                     printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
                     success = false;
                 }
-
-                if (TTF_Init()==-1) {
-                    printf("SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
-                    success = false;
-                }
             }
         }
     }
@@ -300,7 +308,7 @@ void wclose()
     SDL_Quit();
 }
 
-void game_display(int* A, int N) {
+void game_display_classic(int* A, int N) {
     int margin = 20;
     int rect_size = 100;
     int* posx = malloc(sizeof(int)*N*N);
@@ -313,25 +321,31 @@ void game_display(int* A, int N) {
         }
     }
 
-    SDL_SetRenderDrawColor( gRenderer, 0x80, 0x80, 0x80, 0xFF );
+    SDL_SetRenderDrawColor( gRenderer, 0xF7, 0xDD, 0xC3, 0xFF );
     SDL_RenderClear(gRenderer);
 
     for (int i=0;i<N;i++) {
         for (int j=0;j<N;j++) {
-            SDL_Rect textureRect = { posx[N*i+j], posy[N*i+j], rect_size, rect_size};
-            SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
-
-            int number = A[N*i+j];
-            if (number != -1) {
-                if (!loadMedia_number(number)) { printf("could not load number %d", number); }
-                else {
-                    SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
-                    SDL_RenderCopy(gRenderer, mTexture, NULL, &textureRect_text);
-                }
+            if(!loadMedia_rect())
+            {
+                printf( "Failed to load media!\n" );
             }
             else {
-                SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
-                SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect_text);
+                SDL_Rect textureRect = { posx[N*i+j], posy[N*i+j], rect_size, rect_size};
+                SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+
+                int number = A[N*i+j];
+                if (number != -1) {
+                    if (!loadMedia_number(number)) { printf("could not load number %d", number); }
+                    else {
+                        SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                        SDL_RenderCopy(gRenderer, mTexture, NULL, &textureRect_text);
+                    }
+                }
+                else {
+                    SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                    SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect_text);
+                }
             }
         }
     }
@@ -341,11 +355,43 @@ void game_display(int* A, int N) {
     free(posx);
     free(posy);
 }
+void main_menu_display(SDL_Event e, enum status *status) {
+    int N=3;
+    int initialMargin = 100;
+    int margin = 20;
+    int wButton = 256;
+    int hButton = 64;
+    int* posx = malloc(sizeof(int)*N);
+    int* posy = malloc(sizeof(int)*N);
+
+    for (int i=0;i<N;i++) {
+        posy[i] = initialMargin+(hButton+margin)*i;
+        posx[i] = SCREEN_WIDTH/2-wButton/2;
+    }
+    SDL_SetRenderDrawColor( gRenderer, 0xF7, 0xDD, 0xC3, 0xFF );
+    SDL_RenderClear(gRenderer);
+
+    if(!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/play_classic.png")) {
+        printf("Failed to load classic button!\n");
+    } else {
+        SDL_Rect textureRect = { posx[0], posy[0], wButton, hButton};
+        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+    }
+
+    if (e.type == SDL_MOUSEBUTTONDOWN) {
+        int x,y;
+        SDL_GetMouseState(&x, &y);
+        if (isInside(x,y,wButton,hButton,posx[0],posy[0])) { *status = CLASSIC; }
+    }
+
+    SDL_RenderPresent(gRenderer);
+}
 
 
 
 int main()
 {
+    enum status status = MENU;
 
     srand(time(NULL));
     int N=4;
@@ -360,29 +406,19 @@ int main()
     }
     else
     {
-        //Load media
-        if(!loadMedia_rect())
+        bool quit = false;
+        SDL_Event e;
+        while( !quit )
         {
-            printf( "Failed to load media!\n" );
-        }
-        else
-        {
-            bool quit = false;
-            SDL_Event e;
-
-            while( !quit )
+            while( SDL_PollEvent( &e ) != 0 )
             {
-
-                //Handle events on queue
-                while( SDL_PollEvent( &e ) != 0 )
-                {
-                    game_display(A, N);
-                    //User requests quit
+                if (status==CLASSIC) {
                     if( e.type == SDL_QUIT )
                     {
                         quit = true;
                     }
-                    else if (e.type == SDL_KEYDOWN) {
+                    game_display_classic(A, N);
+                    if (e.type == SDL_KEYDOWN) {
                         switch (e.key.keysym.sym) {
                             case SDLK_z:
                                 dir='u';
@@ -400,16 +436,29 @@ int main()
                                 dir='r';
                                 printf("dir %c", dir);
                                 break;
+                            case SDLK_ESCAPE:
+                                status=MENU;
+                                dir='z';
+                                break;
                             default:
-                                dir=' ';
+                                dir='x';
+                                break;
                         }
-                        move(N,dir,A);
-                        spawn(N,A);
+                        if (dir!='x' && dir!='z') {
+                            move(N,dir,A);
+                            spawn(N,A);
+                        }
                     }
-
-
                 }
 
+                if (status==MENU) {
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+
+                    main_menu_display(e, &status);
+                }
             }
         }
     }
