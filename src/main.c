@@ -12,7 +12,7 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 640;
 
-enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, SETTINGS };
+enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, NDIM, SETTINGS };
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
@@ -167,10 +167,10 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
 SDL_Texture* mTexture = NULL;
+SDL_Texture* classicBackgroundTexture = NULL;
 
 SDL_Texture* loadTexture(char *path) {
     SDL_Texture* newTexture = NULL;
-
     SDL_Surface* loadedSurface = IMG_Load(path);
 
     if( loadedSurface == NULL ) {
@@ -230,15 +230,20 @@ bool loadMedia_number(int number)
 
     return success;
 }
-bool loadMedia(char* path) {
+bool loadMedia(char* path, SDL_Texture** texture) {
     bool success = true;
-    gTexture = loadTexture(path);
-    if( gTexture == NULL )
+    *texture = loadTexture(path);
+    if( *texture == NULL )
     {
         printf( "Failed to load texture image!\n" );
         success = false;
     }
     return success;
+}
+bool textureInit() {
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/background.png", &classicBackgroundTexture)) {
+        printf("Failed to load game background!");
+    }
 }
 bool init()
 {
@@ -289,6 +294,8 @@ bool init()
                 }
             }
         }
+
+        textureInit();
     }
 
     return success;
@@ -311,18 +318,22 @@ void wclose()
 void game_display_classic(int* A, int N) {
     int margin = 20;
     int rect_size = 100;
+    int offset = margin;
     int* posx = malloc(sizeof(int)*N*N);
     int* posy = malloc(sizeof(int)*N*N);
 
     for (int i=0;i<N;i++) {
         for (int j=0;j<N;j++) {
-            posy[N*i+j] = margin+(rect_size+margin)*i;
-            posx[N*i+j] = margin+(rect_size+margin)*j;
+            posy[N*i+j] = offset+margin+(rect_size+margin)*i;
+            posx[N*i+j] = offset+margin+(rect_size+margin)*j;
         }
     }
 
-    SDL_SetRenderDrawColor( gRenderer, 0xF7, 0xDD, 0xC3, 0xFF );
+    SDL_SetRenderDrawColor( gRenderer, 0xFE, 0xFE, 0xE6, 0xFF );
     SDL_RenderClear(gRenderer);
+
+    SDL_Rect backgroundRect = { offset, offset, N*rect_size+(N+1)*margin, N*rect_size+(N+1)*margin};
+    SDL_RenderCopy(gRenderer, classicBackgroundTexture, NULL, &backgroundRect);
 
     for (int i=0;i<N;i++) {
         for (int j=0;j<N;j++) {
@@ -341,10 +352,6 @@ void game_display_classic(int* A, int N) {
                         SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
                         SDL_RenderCopy(gRenderer, mTexture, NULL, &textureRect_text);
                     }
-                }
-                else {
-                    SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
-                    SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect_text);
                 }
             }
         }
@@ -368,10 +375,10 @@ void main_menu_display(SDL_Event e, enum status *status) {
         posy[i] = initialMargin+(hButton+margin)*i;
         posx[i] = SCREEN_WIDTH/2-wButton/2;
     }
-    SDL_SetRenderDrawColor( gRenderer, 0xF7, 0xDD, 0xC3, 0xFF );
+    SDL_SetRenderDrawColor( gRenderer, 0xFE, 0xFE, 0xE6, 0xFF );
     SDL_RenderClear(gRenderer);
 
-    if(!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/play_classic.png")) {
+    if(!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/play_classic.png", &gTexture)) {
         printf("Failed to load classic button!\n");
     } else {
         SDL_Rect textureRect = { posx[0], posy[0], wButton, hButton};
