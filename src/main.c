@@ -11,8 +11,9 @@
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 640;
+const int len = 11;
 
-enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, NDIM, SETTINGS };
+enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, NDIM, SETTINGS, VICTORY };
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
@@ -166,8 +167,25 @@ bool isInside(int x, int y, int w, int h, int a, int b) {
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
-SDL_Texture* mTexture = NULL;
 SDL_Texture* classicBackgroundTexture = NULL;
+SDL_Texture* texture2 = NULL;
+SDL_Texture* texture4 = NULL;
+SDL_Texture* texture8 = NULL;
+SDL_Texture* texture16 = NULL;
+SDL_Texture* texture32 = NULL;
+SDL_Texture* texture64 = NULL;
+SDL_Texture* texture128 = NULL;
+SDL_Texture* texture256 = NULL;
+SDL_Texture* texture512 = NULL;
+SDL_Texture* texture1024 = NULL;
+SDL_Texture* texture2048 = NULL;
+
+
+
+
+SDL_Texture* rectTexture = NULL;
+
+
 
 SDL_Texture* loadTexture(char *path) {
     SDL_Texture* newTexture = NULL;
@@ -198,33 +216,34 @@ bool loadMedia_rect()
     bool success = true;
 
     //Load PNG texture
-    gTexture = loadTexture( "/Users/phesox/CLionProjects/2048_in104/assets/textures/rect.png" );
-    if( gTexture == NULL )
+    rectTexture = loadTexture( "/Users/phesox/CLionProjects/2048_in104/assets/textures/rect.png" );
+    if( rectTexture == NULL )
     {
-        printf( "Failed to load texture image!\n" );
+        printf( "Failed to load rectangle texture!\n" );
         success = false;
     }
 
     return success;
 }
-bool loadMedia_number(int number)
+bool loadMedia_number(int number, SDL_Texture** texture)
 {
     //Loading success flag
     bool success = true;
     char textureText[20];
+    strcpy(textureText, "");
     if (number != -1) { sprintf(textureText, "%d", number); }
-    else { strcpy(textureText, "");  }
 
     char path[100];
+    strcpy(path,"");
     strcat(path, "/Users/phesox/CLionProjects/2048_in104/assets/textures/numbers/");
     strcat(path,textureText);
     strcat(path,".png");
-
+    printf("%s\n",path);
     //Load PNG texture
-    mTexture = loadTexture(path);
-    if( mTexture == NULL )
+    *texture = loadTexture(path);
+    if( *texture == NULL )
     {
-        printf( "Failed to load texture image!\n" );
+        printf( "Failed to load number %d texture !\n", number);
         success = false;
     }
 
@@ -241,6 +260,19 @@ bool loadMedia(char* path, SDL_Texture** texture) {
     return success;
 }
 bool textureInit() {
+    loadMedia_rect();
+    loadMedia_number(2,&texture2);
+    loadMedia_number(4,&texture4);
+    loadMedia_number(8,&texture8);
+    loadMedia_number(16,&texture16);
+    loadMedia_number(32,&texture32);
+    loadMedia_number(64,&texture64);
+    loadMedia_number(128,&texture128);
+    loadMedia_number(256,&texture256);
+    loadMedia_number(512,&texture512);
+    loadMedia_number(1024,&texture1024);
+    loadMedia_number(2048,&texture2048);
+
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/background.png", &classicBackgroundTexture)) {
         printf("Failed to load game background!");
     }
@@ -303,19 +335,20 @@ bool init()
 void wclose()
 {
     SDL_DestroyTexture(gTexture);
-    SDL_DestroyTexture(mTexture);
     SDL_DestroyRenderer( gRenderer);
     SDL_DestroyWindow( gWindow);
     gWindow = NULL;
     gRenderer = NULL;
     gTexture = NULL;
-    mTexture = NULL;
 
     IMG_Quit();
     SDL_Quit();
 }
 
 void game_display_classic(int* A, int N) {
+    SDL_Texture* numberTextures[] = {texture2, texture4, texture8, texture16, texture32,
+                                     texture64, texture128, texture256, texture512,texture1024,
+                                     texture2048 };
     int margin = 20;
     int rect_size = 100;
     int offset = margin;
@@ -337,22 +370,16 @@ void game_display_classic(int* A, int N) {
 
     for (int i=0;i<N;i++) {
         for (int j=0;j<N;j++) {
-            if(!loadMedia_rect())
-            {
-                printf( "Failed to load media!\n" );
+            int number = A[N*i+j];
+
+            if (number == -1) {
+                SDL_Rect textureRect = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                SDL_RenderCopy(gRenderer, rectTexture, NULL, &textureRect);
             }
             else {
-                SDL_Rect textureRect = { posx[N*i+j], posy[N*i+j], rect_size, rect_size};
-                SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
-
-                int number = A[N*i+j];
-                if (number != -1) {
-                    if (!loadMedia_number(number)) { printf("could not load number %d", number); }
-                    else {
-                        SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
-                        SDL_RenderCopy(gRenderer, mTexture, NULL, &textureRect_text);
-                    }
-                }
+                int a = (int) (log(number)/log(2)-1);
+                SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                SDL_RenderCopy(gRenderer, numberTextures[a], NULL, &textureRect_text);
             }
         }
     }
@@ -413,6 +440,7 @@ int main()
     }
     else
     {
+
         bool quit = false;
         SDL_Event e;
         while( !quit )
@@ -429,19 +457,15 @@ int main()
                         switch (e.key.keysym.sym) {
                             case SDLK_z:
                                 dir='u';
-                                printf("dir %c", dir);
                                 break;
                             case SDLK_s:
                                 dir='d';
-                                printf("dir %c", dir);
                                 break;
                             case SDLK_q:
                                 dir='l';
-                                printf("dir %c", dir);
                                 break;
                             case SDLK_d:
                                 dir='r';
-                                printf("dir %c", dir);
                                 break;
                             case SDLK_ESCAPE:
                                 status=MENU;
