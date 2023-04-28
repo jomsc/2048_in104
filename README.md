@@ -8,7 +8,8 @@ Par Clara Beaugrand et Joseph Mouscadet
 - Dynamic mode
 - Settings page
 - N-dim mode
-- RESET button if game is started
+- Change all path from absolute to relative
 
 # DONE LIST
 - Recode texture loading process to optimize the game
+- RESET button if game is started

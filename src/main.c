@@ -11,7 +11,6 @@
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 640;
-const int len = 11;
 
 enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, NDIM, SETTINGS, VICTORY };
 
@@ -168,6 +167,7 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
 SDL_Texture* classicBackgroundTexture = NULL;
+SDL_Texture* resetButton = NULL;
 SDL_Texture* texture2 = NULL;
 SDL_Texture* texture4 = NULL;
 SDL_Texture* texture8 = NULL;
@@ -179,12 +179,9 @@ SDL_Texture* texture256 = NULL;
 SDL_Texture* texture512 = NULL;
 SDL_Texture* texture1024 = NULL;
 SDL_Texture* texture2048 = NULL;
-
-
-
-
 SDL_Texture* rectTexture = NULL;
 
+bool isInitialClassic = true;
 
 
 SDL_Texture* loadTexture(char *path) {
@@ -276,6 +273,12 @@ bool textureInit() {
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/background.png", &classicBackgroundTexture)) {
         printf("Failed to load game background!");
     }
+
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/reset.png", &resetButton)) {
+        printf("Failed to load reset button!");
+    }
+
+    return true;
 }
 bool init()
 {
@@ -346,6 +349,7 @@ void wclose()
 }
 
 void game_display_classic(int* A, int N) {
+    isInitialClassic = false;
     SDL_Texture* numberTextures[] = {texture2, texture4, texture8, texture16, texture32,
                                      texture64, texture128, texture256, texture512,texture1024,
                                      texture2048 };
@@ -389,16 +393,16 @@ void game_display_classic(int* A, int N) {
     free(posx);
     free(posy);
 }
-void main_menu_display(SDL_Event e, enum status *status) {
-    int N=3;
+void main_menu_display(SDL_Event e, enum status *status, int* A[], int N) {
+    int nb_buttons=3;
     int initialMargin = 100;
     int margin = 20;
     int wButton = 256;
     int hButton = 64;
-    int* posx = malloc(sizeof(int)*N);
-    int* posy = malloc(sizeof(int)*N);
+    int* posx = malloc(sizeof(int)*nb_buttons);
+    int* posy = malloc(sizeof(int)*nb_buttons);
 
-    for (int i=0;i<N;i++) {
+    for (int i=0;i<nb_buttons;i++) {
         posy[i] = initialMargin+(hButton+margin)*i;
         posx[i] = SCREEN_WIDTH/2-wButton/2;
     }
@@ -410,12 +414,24 @@ void main_menu_display(SDL_Event e, enum status *status) {
     } else {
         SDL_Rect textureRect = { posx[0], posy[0], wButton, hButton};
         SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+        if (!isInitialClassic) {
+            SDL_Rect resetRect = { posx[0]+wButton+margin, posy[0], hButton, hButton};
+            SDL_RenderCopy(gRenderer, resetButton, NULL, &resetRect);
+        }
     }
 
     if (e.type == SDL_MOUSEBUTTONDOWN) {
         int x,y;
         SDL_GetMouseState(&x, &y);
         if (isInside(x,y,wButton,hButton,posx[0],posy[0])) { *status = CLASSIC; }
+        if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitialClassic) {
+            isInitialClassic = true;
+            for (int k=0;k<(N*N);k++) {
+                (*A)[k]=-1;
+                printf("%d", k);
+            }
+            spawn(N, *A);
+        }
     }
 
     SDL_RenderPresent(gRenderer);
@@ -488,7 +504,7 @@ int main()
                         quit = true;
                     }
 
-                    main_menu_display(e, &status);
+                    main_menu_display(e, &status, &A, N);
                 }
             }
         }
