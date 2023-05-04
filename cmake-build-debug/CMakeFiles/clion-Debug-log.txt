@@ -1,8 +1,8 @@
-"/Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8109.222/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8109.222/CLion.app/Contents/bin/ninja/mac/ninja" -DCMAKE_C_COMPILER=gcc -G Ninja -S /Users/phesox/CLionProjects/2048_in104 -B /Users/phesox/CLionProjects/2048_in104/cmake-build-debug
+"/Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8770.66/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8770.66/CLion.app/Contents/bin/ninja/mac/ninja" -DCMAKE_C_COMPILER=gcc -G Ninja -S /Users/phesox/CLionProjects/2048_in104 -B /Users/phesox/CLionProjects/2048_in104/cmake-build-debug
 
 -- CMAKE_BINARY_DIR: /Users/phesox/CLionProjects/2048_in104/cmake-build-debug
 -- CMAKE_SOURCE_DIR: /Users/phesox/CLionProjects/2048_in104
--- CMAKE_COMMAND: /Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8109.222/CLion.app/Contents/bin/cmake/mac/bin/cmake
+-- CMAKE_COMMAND: /Users/phesox/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/231.8770.66/CLion.app/Contents/bin/cmake/mac/bin/cmake
 -- CMAKE_VERSION: 3.25.2
 -- CMAKE_C_COMPILER: gcc
 -- CMAKE_PROJECT_NAME: 

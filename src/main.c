@@ -3,20 +3,21 @@
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include <SDL_ttf.h>
 #include <string.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 640;
+int SCREEN_WIDTH = 1280;
+int SCREEN_HEIGHT = 720;
+Uint32 elapsedTime = 0;
 
-enum status { MENU, CLASSIC, QUANTIC, DYNAMIC, NDIM, SETTINGS, VICTORY };
+enum status { MENU, CLASSIC, DYNAMIC, NDIM, SETTINGS, VICTORY };
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
-void combine(int i, char dir, int N, int* A)
+void combine(int i, char dir, int N, int* A, int* score)
 {
     if (dir=='r') {
         int n=0;
@@ -27,6 +28,7 @@ void combine(int i, char dir, int N, int* A)
         
         for (int k=0;k<n-1;k++) { 
             if (test(A[i*N+pos[k]],A[i*N+pos[k+1]])) {
+                *score += f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k]] = f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k+1]] = -1;
                 k++;
@@ -45,6 +47,7 @@ void combine(int i, char dir, int N, int* A)
 
         for (int k=0;k<n-1;k++) {
             if (test(A[i*N+pos[k]],A[i*N+pos[k+1]])) {
+                *score += f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k]] = f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k+1]] = -1;
                 k++;
@@ -63,6 +66,7 @@ void combine(int i, char dir, int N, int* A)
 
         for (int k=0;k<n-1;k++) {
             if (test(A[pos[k]*N+i],A[pos[k+1]*N+i])) {
+                *score += f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k]*N+i] = f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k+1]*N+i] = -1;
                 k++;
@@ -81,6 +85,7 @@ void combine(int i, char dir, int N, int* A)
 
         for (int k=0;k<n-1;k++) {
             if (test(A[pos[k]*N+i],A[pos[k+1]*N+i])) {
+                *score += f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k]*N+i] = f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k+1]*N+i] = -1;
                 k++;
@@ -133,9 +138,9 @@ void collapse(int i, char dir, int N, int* A)
         }
     }
 }
-void move(int N, char dir, int* A) {
+void move(int N, char dir, int* A, int* score) {
     for (int i=0;i<N;i++) {
-        combine(i,dir,N,A);
+        combine(i,dir,N,A,score);
         collapse(i,dir,N,A);
     }
 }
@@ -166,6 +171,9 @@ bool isInside(int x, int y, int w, int h, int a, int b) {
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
+
+SDL_Texture* menuBackgroundVideo = NULL;
+
 SDL_Texture* classicBackgroundTexture = NULL;
 SDL_Texture* resetButton = NULL;
 SDL_Texture* texture2 = NULL;
@@ -180,6 +188,12 @@ SDL_Texture* texture512 = NULL;
 SDL_Texture* texture1024 = NULL;
 SDL_Texture* texture2048 = NULL;
 SDL_Texture* rectTexture = NULL;
+
+TTF_Font* scoreFont = NULL;
+SDL_Texture* scoreTexture = NULL;
+SDL_Texture* scoreHeaderTexture = NULL;
+int wText;
+int hText;
 
 bool isInitialClassic = true;
 
@@ -256,6 +270,74 @@ bool loadMedia(char* path, SDL_Texture** texture) {
     }
     return success;
 }
+bool loadBGMenuFrame(int frame, SDL_Texture** texture)
+{
+    //Loading success flag
+    bool success = true;
+    char textureText[20];
+    strcpy(textureText, "");
+    if (frame != -1) { sprintf(textureText, "%d", frame); }
+
+    char path[100];
+    strcpy(path,"");
+    strcat(path, "/Users/phesox/CLionProjects/2048_in104/assets/videos/bgMenu/frames/out");
+    strcat(path,textureText);
+    strcat(path,".jpg");
+    //Load PNG texture
+    *texture = loadTexture(path);
+    if( *texture == NULL )
+    {
+        printf( "Failed to load bgMenu %d texture !\n", frame);
+        success = false;
+    }
+
+    return success;
+}
+
+bool loadFromRenderedText (char* textureText, SDL_Color textColor, SDL_Texture** textTexture, TTF_Font* textFont) {
+    SDL_Surface* textSurface = TTF_RenderText_Solid( textFont, textureText, textColor );
+    if( textSurface == NULL ) {
+        printf( "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError() );
+    }
+    else
+    {
+        //Create texture from surface pixels
+        *textTexture = SDL_CreateTextureFromSurface( gRenderer, textSurface );
+        if( *textTexture == NULL ) {
+            printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+        }
+        else {
+            //Get image dimensions
+            wText = textSurface->w;
+            hText = textSurface->h;
+        }
+
+        //Get rid of old surface
+        SDL_FreeSurface( textSurface );
+    }
+
+    //Return success
+    return *textTexture != NULL;
+}
+bool loadText (char* text, SDL_Texture** textTexture, TTF_Font** textFont, char* pathToFont, int size, SDL_Color textColor) {
+    bool success = true;
+    *textFont = TTF_OpenFont(pathToFont, size);
+    if (*textFont == NULL) {
+        printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
+        success = false;
+    }
+    else  {
+        if(!loadFromRenderedText(text,textColor,textTexture,*textFont))
+        {
+            printf( "Failed to render text texture!\n" );
+            success = false;
+        }
+    }
+
+    return success;
+}
+
+
 bool textureInit() {
     loadMedia_rect();
     loadMedia_number(2,&texture2);
@@ -277,6 +359,10 @@ bool textureInit() {
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/reset.png", &resetButton)) {
         printf("Failed to load reset button!");
     }
+    SDL_Color color = {0, 0, 0};
+    loadText("SCORE", &scoreHeaderTexture, &scoreFont,
+             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+             28, color);
 
     return true;
 }
@@ -300,7 +386,13 @@ bool init()
         }
 
         //Create window
-        gWindow = SDL_CreateWindow( "2048!", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+        gWindow = SDL_CreateWindow( "2048!", SDL_WINDOWPOS_UNDEFINED,
+                                    SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
+                                    SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL );
+
+        //SDL_SetWindowFullscreen(gWindow, SDL_WINDOW_FULLSCREEN);
+        //SDL_GetWindowSize(gWindow, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+
         if( gWindow == NULL )
         {
             printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -327,6 +419,11 @@ bool init()
                     printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
                     success = false;
                 }
+
+                if (TTF_Init() == -1) {
+                    printf("SDL_ttf could not initialize! SDL_ttf Error : %s\n", TTF_GetError());
+                    success = false;
+                }
             }
         }
 
@@ -346,9 +443,11 @@ void wclose()
 
     IMG_Quit();
     SDL_Quit();
+    TTF_Quit();
 }
 
-void game_display_classic(int* A, int N) {
+void game_display_classic(int* A, int N, int score) {
+    elapsedTime=SDL_GetTicks();
     isInitialClassic = false;
     SDL_Texture* numberTextures[] = {texture2, texture4, texture8, texture16, texture32,
                                      texture64, texture128, texture256, texture512,texture1024,
@@ -388,14 +487,35 @@ void game_display_classic(int* A, int N) {
         }
     }
 
+    SDL_Rect scoreHeaderRect = { 2*offset+(N+1)*margin+N*rect_size, offset+margin, 100, 30 };
+    SDL_RenderCopy(gRenderer, scoreHeaderTexture, NULL, &scoreHeaderRect);
+
+    SDL_Color color = {0, 0, 0};
+    char score_c[20];
+    strcpy(score_c, "");
+    sprintf(score_c, "%d", score);
+    loadText(score_c, &scoreTexture, &scoreFont,
+             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+             28, color);
+
+    SDL_Rect scoreRect = { 2*offset+(N+1)*margin+N*rect_size, offset+2*margin+28, 100, 30 };
+    SDL_RenderCopy(gRenderer, scoreTexture, NULL, &scoreRect);
+
+    SDL_Rect fpsRect = { 2*offset+(N+1)*margin+N*rect_size, offset+4*margin+2*28, 100, 30 };
+    char fps_c[20];
+
+
     SDL_RenderPresent(gRenderer);
+
+    Uint32 timeCount = SDL_GetTicks();
+    printf("Time to render : %d ms\n",timeCount-elapsedTime);
 
     free(posx);
     free(posy);
 }
-void main_menu_display(SDL_Event e, enum status *status, int* A[], int N) {
-    int nb_buttons=3;
-    int initialMargin = 100;
+void main_menu_display(SDL_Event e, enum status *status, int* A[], int N, int* classic_score, int x, int y, bool pressed) {
+    int nb_buttons=5;
+    int initialMargin = 250;
     int margin = 20;
     int wButton = 256;
     int hButton = 64;
@@ -409,10 +529,30 @@ void main_menu_display(SDL_Event e, enum status *status, int* A[], int N) {
     SDL_SetRenderDrawColor( gRenderer, 0xFE, 0xFE, 0xE6, 0xFF );
     SDL_RenderClear(gRenderer);
 
+    int bgFrameCounter;
+    elapsedTime = SDL_GetTicks();
+    bgFrameCounter = (int)((elapsedTime%3566)/34);
+
+    if (!loadBGMenuFrame(bgFrameCounter+1, &menuBackgroundVideo)) { printf("oops"); }
+    else {
+        SDL_RenderCopy(gRenderer, menuBackgroundVideo, NULL, NULL);
+    }
+
+    // TITLE
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/title.png", &gTexture)) {
+        printf("Failed to load title texture!");
+    }
+    else {
+        SDL_Rect textureRect = {SCREEN_WIDTH/2-2*wButton, margin, 4*wButton, 4*hButton};
+        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+    }
+
+    // CLASSIC BUTTON
     if(!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/play_classic.png", &gTexture)) {
         printf("Failed to load classic button!\n");
-    } else {
-        SDL_Rect textureRect = { posx[0], posy[0], wButton, hButton};
+    }
+    else {
+        SDL_Rect textureRect = {posx[0], posy[0], wButton, hButton};
         SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
         if (!isInitialClassic) {
             SDL_Rect resetRect = { posx[0]+wButton+margin, posy[0], hButton, hButton};
@@ -420,18 +560,43 @@ void main_menu_display(SDL_Event e, enum status *status, int* A[], int N) {
         }
     }
 
-    if (e.type == SDL_MOUSEBUTTONDOWN) {
-        int x,y;
-        SDL_GetMouseState(&x, &y);
-        if (isInside(x,y,wButton,hButton,posx[0],posy[0])) { *status = CLASSIC; }
-        if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitialClassic) {
-            isInitialClassic = true;
-            for (int k=0;k<(N*N);k++) {
-                (*A)[k]=-1;
-                printf("%d", k);
-            }
-            spawn(N, *A);
+    // MUSIC MODE BUTTON
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/music_mode.png", &gTexture)) {
+        printf("Error loading musicmode button");
+    }
+    else {
+        SDL_Rect textureRect = {posx[1], posy[1], wButton, hButton};
+        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+    }
+
+    // NDIM MODE BUTTON
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/ndim.png", &gTexture)) {
+        printf("Error loading ndim button");
+    }
+    else {
+        SDL_Rect textureRect = {posx[2], posy[2], wButton, hButton};
+        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+    }
+
+    // SETTINGS BUTTON
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/settings.png", &gTexture)) {
+        printf("Error loading settings button");
+    }
+    else {
+        SDL_Rect textureRect = {posx[3], posy[3], wButton, hButton};
+        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+    }
+
+
+    if (isInside(x,y,wButton,hButton,posx[0],posy[0]) && pressed) { *status = CLASSIC; }
+    if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitialClassic && pressed) {
+        isInitialClassic = true;
+        *classic_score = 0;
+        for (int k=0;k<(N*N);k++) {
+            (*A)[k]=-1;
+            printf("%d", k);
         }
+        spawn(N, *A);
     }
 
     SDL_RenderPresent(gRenderer);
@@ -448,7 +613,11 @@ int main()
     int* A=malloc(sizeof(int)*N*N);
     for (int i=0;i<N*N;i++) { A[i]=-1; }
     char dir;
+    int classic_score = 0;
     spawn(N,A);
+
+    int x, y;
+    bool pressed = false;
 
     if( !init() )
     {
@@ -461,64 +630,55 @@ int main()
         SDL_Event e;
         while( !quit )
         {
-            while( SDL_PollEvent( &e ) != 0 )
-            {
-                if (status==CLASSIC) {
-                    if( e.type == SDL_QUIT )
-                    {
-                        quit = true;
+            elapsedTime = SDL_GetTicks();
+            pressed = false;
+
+            while( SDL_PollEvent( &e ) ) {
+                if (e.type == SDL_QUIT) {
+                    quit = true;
+                }
+                if (e.type == SDL_KEYDOWN) {
+                    switch (e.key.keysym.sym) {
+                        case SDLK_z:
+                            dir = 'u';
+                            break;
+                        case SDLK_s:
+                            dir = 'd';
+                            break;
+                        case SDLK_q:
+                            dir = 'l';
+                            break;
+                        case SDLK_d:
+                            dir = 'r';
+                            break;
+                        case SDLK_ESCAPE:
+                            status = MENU;
+                            dir = 'x';
+                            break;
+                        default:
+                            dir = 'x';
+                            break;
                     }
-                    game_display_classic(A, N);
-                    if (e.type == SDL_KEYDOWN) {
-                        switch (e.key.keysym.sym) {
-                            case SDLK_z:
-                                dir='u';
-                                break;
-                            case SDLK_s:
-                                dir='d';
-                                break;
-                            case SDLK_q:
-                                dir='l';
-                                break;
-                            case SDLK_d:
-                                dir='r';
-                                break;
-                            case SDLK_ESCAPE:
-                                status=MENU;
-                                dir='z';
-                                break;
-                            default:
-                                dir='x';
-                                break;
-                        }
-                        if (dir!='x' && dir!='z') {
-                            move(N,dir,A);
-                            spawn(N,A);
-                        }
+                    if (dir != 'x' && status == CLASSIC) {
+                        move(N, dir, A, &classic_score);
+                        spawn(N, A);
                     }
                 }
-
-                if (status==MENU) {
-                    if( e.type == SDL_QUIT )
-                    {
-                        quit = true;
-                    }
-
-                    main_menu_display(e, &status, &A, N);
+                if (e.type == SDL_MOUSEBUTTONDOWN) {
+                    SDL_GetMouseState(&x, &y);
+                    pressed = true;
                 }
+            }
+
+            if (status==CLASSIC) {
+                game_display_classic(A, N, classic_score);
+            }
+
+            if (status==MENU) {
+                main_menu_display(e, &status, &A, N, &classic_score, x, y, pressed);
             }
         }
     }
-
-        /*
-        for(int i=0;i<N*N;i++)
-        {
-            if(A[i]==2048) {
-                printf("\n You win！\n");
-                return 1;//end
-            }
-        }
-    }*/
 
     wclose();
 
