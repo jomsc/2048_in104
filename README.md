@@ -9,10 +9,16 @@ Par Clara Beaugrand et Joseph Mouscadet
 - Change all path from absolute to relative
 - change controls in settings menu
 - change resolution or window size 
-- Quit button
+- change game icon
+- sound
+- RESET button if game is started
+- loading screen
+
 
 
 # DONE LIST
 - Recode texture loading process to optimize the game
-- RESET button if game is started
 - Code score
+- Quit button
+- MOTD
+- Button on hover

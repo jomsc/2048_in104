@@ -12,8 +12,14 @@
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
 Uint32 elapsedTime = 0;
+int splash = 0;
+int splashLen = 12;
 
-enum status { MENU, CLASSIC, DYNAMIC, NDIM, SETTINGS, VICTORY };
+enum status { MENU, CLASSIC, MUSIC, NDIM, SETTINGS, VICTORY, QUIT };
+
+char MOTD[12][40] = {"By Clara and Joseph!","Music by @48Ocean","SONO approved!","merci jaja",
+                     "Seen on TV!","French Touch = good music","It's real!","Bugs included",
+                     "From ENSTA with love","...!","Works in Australia!","STARDUST?! Coming soon..."};
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
@@ -172,10 +178,12 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
 
-SDL_Texture* menuBackgroundVideo = NULL;
+SDL_Texture* menuVideo = NULL;
+SDL_Texture* menuButtons = NULL;
+SDL_Texture* resetButton = NULL;
 
 SDL_Texture* classicBackgroundTexture = NULL;
-SDL_Texture* resetButton = NULL;
+
 SDL_Texture* texture2 = NULL;
 SDL_Texture* texture4 = NULL;
 SDL_Texture* texture8 = NULL;
@@ -190,12 +198,16 @@ SDL_Texture* texture2048 = NULL;
 SDL_Texture* rectTexture = NULL;
 
 TTF_Font* scoreFont = NULL;
+TTF_Font* splashFont = NULL;
 SDL_Texture* scoreTexture = NULL;
 SDL_Texture* scoreHeaderTexture = NULL;
+SDL_Texture* splashTexture = NULL;
+int wSplash;
+int hSplash;
 int wText;
 int hText;
 
-bool isInitialClassic = true;
+bool isInitial[3] = {true, true, true};
 
 
 SDL_Texture* loadTexture(char *path) {
@@ -270,29 +282,6 @@ bool loadMedia(char* path, SDL_Texture** texture) {
     }
     return success;
 }
-bool loadBGMenuFrame(int frame, SDL_Texture** texture)
-{
-    //Loading success flag
-    bool success = true;
-    char textureText[20];
-    strcpy(textureText, "");
-    if (frame != -1) { sprintf(textureText, "%d", frame); }
-
-    char path[100];
-    strcpy(path,"");
-    strcat(path, "/Users/phesox/CLionProjects/2048_in104/assets/videos/bgMenu/frames/out");
-    strcat(path,textureText);
-    strcat(path,".jpg");
-    //Load PNG texture
-    *texture = loadTexture(path);
-    if( *texture == NULL )
-    {
-        printf( "Failed to load bgMenu %d texture !\n", frame);
-        success = false;
-    }
-
-    return success;
-}
 
 bool loadFromRenderedText (char* textureText, SDL_Color textColor, SDL_Texture** textTexture, TTF_Font* textFont) {
     SDL_Surface* textSurface = TTF_RenderText_Solid( textFont, textureText, textColor );
@@ -339,6 +328,7 @@ bool loadText (char* text, SDL_Texture** textTexture, TTF_Font** textFont, char*
 
 
 bool textureInit() {
+    Uint32 startTime = SDL_GetTicks();
     loadMedia_rect();
     loadMedia_number(2,&texture2);
     loadMedia_number(4,&texture4);
@@ -363,6 +353,17 @@ bool textureInit() {
     loadText("SCORE", &scoreHeaderTexture, &scoreFont,
              "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
              28, color);
+
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/menubuttons.png",&menuButtons)) {
+        printf("Failed to load menu buttons!");
+    }
+
+
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/videos/menu/out.png",&menuVideo)) {
+        printf("coup dur");
+    }
+    Uint32 stopTime = SDL_GetTicks();
+    printf("Time to load : %f s\n",(stopTime-startTime)/1000.0);
 
     return true;
 }
@@ -435,6 +436,11 @@ bool init()
 void wclose()
 {
     SDL_DestroyTexture(gTexture);
+    SDL_DestroyTexture(menuButtons);
+    SDL_DestroyTexture(resetButton);
+    SDL_DestroyTexture(menuVideo);
+
+
     SDL_DestroyRenderer( gRenderer);
     SDL_DestroyWindow( gWindow);
     gWindow = NULL;
@@ -448,7 +454,7 @@ void wclose()
 
 void game_display_classic(int* A, int N, int score) {
     elapsedTime=SDL_GetTicks();
-    isInitialClassic = false;
+    isInitial[0] = false;
     SDL_Texture* numberTextures[] = {texture2, texture4, texture8, texture16, texture32,
                                      texture64, texture128, texture256, texture512,texture1024,
                                      texture2048 };
@@ -507,90 +513,109 @@ void game_display_classic(int* A, int N, int score) {
 
     SDL_RenderPresent(gRenderer);
 
-    Uint32 timeCount = SDL_GetTicks();
-    printf("Time to render : %d ms\n",timeCount-elapsedTime);
-
     free(posx);
     free(posy);
 }
 void main_menu_display(SDL_Event e, enum status *status, int* A[], int N, int* classic_score, int x, int y, bool pressed) {
-    int nb_buttons=5;
+    elapsedTime = SDL_GetTicks();
+    int nb_buttons=10;
     int initialMargin = 250;
     int margin = 20;
     int wButton = 256;
     int hButton = 64;
     int* posx = malloc(sizeof(int)*nb_buttons);
     int* posy = malloc(sizeof(int)*nb_buttons);
+    int* textureX = malloc(sizeof(int)*nb_buttons);
+    int* videoTextureX = malloc(sizeof(int)*107);
+    int* videoTextureY = malloc(sizeof(int)*107);
 
     for (int i=0;i<nb_buttons;i++) {
         posy[i] = initialMargin+(hButton+margin)*i;
         posx[i] = SCREEN_WIDTH/2-wButton/2;
+        textureX[i] = 1024*(i%5);
     }
-    SDL_SetRenderDrawColor( gRenderer, 0xFE, 0xFE, 0xE6, 0xFF );
+
+    for (int i=0;i<13;i++) {
+        for (int j=0;j<8;j++) {
+            videoTextureY[8*i+j]=1080*i;
+            videoTextureX[8*i+j]=1920*j;
+        }
+    }
+
+    for (int j=0;j<3;j++) {
+        videoTextureY[8*13+j]=1080*13;
+        videoTextureX[8*13+j]=1920*j;
+    }
+
     SDL_RenderClear(gRenderer);
 
     int bgFrameCounter;
     elapsedTime = SDL_GetTicks();
     bgFrameCounter = (int)((elapsedTime%3566)/34);
+    SDL_Rect vsrcRect = {videoTextureX[bgFrameCounter+1],videoTextureY[bgFrameCounter+1],1920,1080};
+    SDL_RenderCopy(gRenderer, menuVideo, &vsrcRect, NULL);
 
-    if (!loadBGMenuFrame(bgFrameCounter+1, &menuBackgroundVideo)) { printf("oops"); }
-    else {
-        SDL_RenderCopy(gRenderer, menuBackgroundVideo, NULL, NULL);
-    }
+
+
 
     // TITLE
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/title.png", &gTexture)) {
         printf("Failed to load title texture!");
     }
     else {
-        SDL_Rect textureRect = {SCREEN_WIDTH/2-2*wButton, margin, 4*wButton, 4*hButton};
+        SDL_Rect textureRect = {SCREEN_WIDTH/2-2*wButton, 0, 4*wButton, 4*hButton};
         SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
     }
 
-    // CLASSIC BUTTON
-    if(!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/play_classic.png", &gTexture)) {
-        printf("Failed to load classic button!\n");
-    }
-    else {
-        SDL_Rect textureRect = {posx[0], posy[0], wButton, hButton};
-        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
-        if (!isInitialClassic) {
-            SDL_Rect resetRect = { posx[0]+wButton+margin, posy[0], hButton, hButton};
-            SDL_RenderCopy(gRenderer, resetButton, NULL, &resetRect);
+
+    // load buttons
+    for (int i=0;i<(nb_buttons/2);i++) {
+        SDL_Rect textureRect = {posx[i], posy[i], wButton, hButton};
+        if (isInside(x,y,wButton, hButton,posx[i], posy[i])) {
+            SDL_Rect srcRect = {textureX[i], 256, 1024, 256};
+            SDL_RenderCopy(gRenderer, menuButtons, &srcRect, &textureRect);
+        } else {
+            SDL_Rect srcRect = {textureX[i], 0, 1024, 256};
+            SDL_RenderCopy(gRenderer, menuButtons, &srcRect, &textureRect);
+        }
+
+        if (i==0) {
+            if (!isInitial[i]) {
+                SDL_Rect resetRect = { posx[i]+wButton+margin, posy[i], hButton, hButton};
+                SDL_RenderCopy(gRenderer, resetButton, NULL, &resetRect);
+            }
         }
     }
 
-    // MUSIC MODE BUTTON
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/music_mode.png", &gTexture)) {
-        printf("Error loading musicmode button");
+
+
+    // MOTD
+    SDL_Color splashColor = { 255, 255, 0};
+    if (!loadText(MOTD[splash],&splashTexture,&splashFont,
+                  "/Users/phesox/CLionProjects/2048_in104/assets/fonts/minecraft_font.ttf",
+                  21,splashColor)) {
+        printf("failed to load MOTD");
     }
     else {
-        SDL_Rect textureRect = {posx[1], posy[1], wButton, hButton};
-        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
+        double size = (sin((elapsedTime%2000)/314.0)+10)*0.1;
+        SDL_QueryTexture(splashTexture, NULL, NULL, &wSplash, &hSplash);
+        wSplash = (int)(wSplash*size);
+        hSplash = (int)(hSplash*size);
+        SDL_Rect splashRect = { SCREEN_WIDTH/2+wButton/2, (int)(2.3*hButton), wSplash, hSplash};
+        if (splash==10) {
+            SDL_RenderCopyEx(gRenderer, splashTexture, NULL,
+                             &splashRect,-20,NULL,
+                             SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
+        }
+        else {
+            SDL_RenderCopyEx(gRenderer, splashTexture, NULL,
+                             &splashRect,-20,NULL,SDL_FLIP_NONE);
+        }
     }
-
-    // NDIM MODE BUTTON
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/ndim.png", &gTexture)) {
-        printf("Error loading ndim button");
-    }
-    else {
-        SDL_Rect textureRect = {posx[2], posy[2], wButton, hButton};
-        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
-    }
-
-    // SETTINGS BUTTON
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/settings.png", &gTexture)) {
-        printf("Error loading settings button");
-    }
-    else {
-        SDL_Rect textureRect = {posx[3], posy[3], wButton, hButton};
-        SDL_RenderCopy(gRenderer, gTexture, NULL, &textureRect);
-    }
-
 
     if (isInside(x,y,wButton,hButton,posx[0],posy[0]) && pressed) { *status = CLASSIC; }
-    if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitialClassic && pressed) {
-        isInitialClassic = true;
+    if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitial[0] && pressed) {
+        isInitial[0] = true;
         *classic_score = 0;
         for (int k=0;k<(N*N);k++) {
             (*A)[k]=-1;
@@ -598,8 +623,25 @@ void main_menu_display(SDL_Event e, enum status *status, int* A[], int N, int* c
         }
         spawn(N, *A);
     }
+    if (isInside(x,y,wButton,hButton,posx[1],posy[1]) && pressed) { *status = MUSIC; }
+    if (isInside(x,y,wButton,hButton,posx[2],posy[2]) && pressed) { *status = NDIM; }
+    if (isInside(x,y,wButton,hButton,posx[3],posy[3]) && pressed) { *status = SETTINGS; }
+    if (isInside(x,y,wButton,hButton,posx[4],posy[4]) && pressed) { *status = QUIT; }
 
     SDL_RenderPresent(gRenderer);
+
+
+    free(posx);
+    free(posy);
+    free(textureX);
+    free(videoTextureX);
+    free(videoTextureY);
+
+    SDL_DestroyTexture(gTexture);
+    SDL_DestroyTexture(splashTexture);
+
+    Uint32 timeCount = SDL_GetTicks();
+    printf("Time to render : %d ms\n",timeCount-elapsedTime);
 }
 
 
@@ -652,6 +694,7 @@ int main()
                             dir = 'r';
                             break;
                         case SDLK_ESCAPE:
+                            if (status != MENU) { splash = rand()%splashLen; }
                             status = MENU;
                             dir = 'x';
                             break;
@@ -665,17 +708,22 @@ int main()
                     }
                 }
                 if (e.type == SDL_MOUSEBUTTONDOWN) {
-                    SDL_GetMouseState(&x, &y);
                     pressed = true;
                 }
             }
-
-            if (status==CLASSIC) {
-                game_display_classic(A, N, classic_score);
-            }
-
-            if (status==MENU) {
-                main_menu_display(e, &status, &A, N, &classic_score, x, y, pressed);
+            SDL_GetMouseState(&x, &y);
+            switch(status){
+                case CLASSIC:
+                    game_display_classic(A, N, classic_score);
+                    break;
+                case MENU:
+                    main_menu_display(e, &status, &A, N, &classic_score, x, y, pressed);
+                    break;
+                case QUIT:
+                    quit=true;
+                    break;
+                default:
+                    break;
             }
         }
     }
