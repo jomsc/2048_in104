@@ -11,8 +11,9 @@ Par Clara Beaugrand et Joseph Mouscadet
 - change resolution or window size 
 - change game icon
 - sound
-- RESET button if game is started
+- RESET if game is started
 - loading screen
+
 
 
 
@@ -22,3 +23,4 @@ Par Clara Beaugrand et Joseph Mouscadet
 - Quit button
 - MOTD
 - Button on hover
+- 8bit sfx
