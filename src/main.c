@@ -18,8 +18,9 @@ int splashLen = 12;
 Mix_Chunk* start = NULL;
 Mix_Chunk* loose = NULL;
 Mix_Chunk* onCombine = NULL;
+Mix_Chunk* victoryChunk = NULL;
 
-enum status { MENU, CLASSIC, MUSIC, NDIM, SETTINGS, VICTORY, DEFEAT, QUIT };
+enum status { MENU, CLASSIC, MUSIC, NDIM, SETTINGS, VICTORY, DEFEAT, QUIT, CREDITS };
 
 char MOTD[12][40] = {"By Clara and Joseph!","Music by @48Ocean","SONO approved!","merci jaja",
                      "Seen on TV!","French Touch = good music","It's real!","Bugs included",
@@ -42,7 +43,7 @@ void combine(int i, char dir, int N, int* A, int* score)
                 A[i*N+pos[k]] = f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k+1]] = -1;
                 k++;
-                Mix_PlayChannel( -1, onCombine, 0 );
+                //Mix_PlayChannel( -1, onCombine, 0 );
             }
         }
 
@@ -62,7 +63,7 @@ void combine(int i, char dir, int N, int* A, int* score)
                 A[i*N+pos[k]] = f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k+1]] = -1;
                 k++;
-                Mix_PlayChannel( -1, onCombine, 0 );
+                //Mix_PlayChannel( -1, onCombine, 0 );
             }
         }
 
@@ -82,7 +83,7 @@ void combine(int i, char dir, int N, int* A, int* score)
                 A[pos[k]*N+i] = f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k+1]*N+i] = -1;
                 k++;
-                Mix_PlayChannel( -1, onCombine, 0 );
+                //Mix_PlayChannel( -1, onCombine, 0 );
             }
         }
 
@@ -102,7 +103,7 @@ void combine(int i, char dir, int N, int* A, int* score)
                 A[pos[k]*N+i] = f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k+1]*N+i] = -1;
                 k++;
-                Mix_PlayChannel( -1, onCombine, 0 );
+                //Mix_PlayChannel( -1, onCombine, 0 );
             }
         }
 
@@ -177,6 +178,14 @@ void spawn(int N, int* A)
         else { A[x*N+y] = 2; }
     }
 }
+bool isVictory (int* A, int N) {
+    bool victory = false;
+    for (int i=0;i<N*N;i++) {
+        if (A[i] == 2048) { victory = true; }
+    }
+
+    return victory;
+}
 
 bool isInside(int x, int y, int w, int h, int a, int b) {
     return ((x<=(a+w) && x>=a) && (y<=(b+h) && y>= b));
@@ -184,7 +193,6 @@ bool isInside(int x, int y, int w, int h, int a, int b) {
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
-SDL_Texture* loadingTexture = NULL;
 SDL_Texture* gTexture = NULL;
 
 Mix_Music* menuMusic = NULL;
@@ -196,24 +204,14 @@ SDL_Texture* menuVideo = NULL;
 SDL_Texture* menuButtons = NULL;
 SDL_Texture* resetButton = NULL;
 SDL_Texture* menuTitle = NULL;
+SDL_Texture* victoryTexture = NULL;
 
 SDL_Texture* classicBackgroundTexture = NULL;
-SDL_Texture* texture2 = NULL;
-SDL_Texture* texture4 = NULL;
-SDL_Texture* texture8 = NULL;
-SDL_Texture* texture16 = NULL;
-SDL_Texture* texture32 = NULL;
-SDL_Texture* texture64 = NULL;
-SDL_Texture* texture128 = NULL;
-SDL_Texture* texture256 = NULL;
-SDL_Texture* texture512 = NULL;
-SDL_Texture* texture1024 = NULL;
-SDL_Texture* texture2048 = NULL;
-SDL_Texture* rectTexture = NULL;
+SDL_Texture* numbersTexture = NULL;
 TTF_Font* scoreFont = NULL;
 TTF_Font* splashFont = NULL;
 SDL_Texture* scoreTexture = NULL;
-SDL_Texture* scoreHeaderTexture = NULL;
+SDL_Texture* scoreBGTexture = NULL;
 SDL_Texture* splashTexture = NULL;
 int wSplash;
 int hSplash;
@@ -223,6 +221,7 @@ int hText;
 SDL_Texture* cursor = NULL;
 
 bool isInitial[3] = {true, true, true};
+bool vicIgnore[3] = { false, false, false };
 
 
 SDL_Texture* loadTexture(char *path) {
@@ -247,45 +246,6 @@ SDL_Texture* loadTexture(char *path) {
     }
 
     return newTexture;
-}
-bool loadMedia_rect()
-{
-    //Loading success flag
-    bool success = true;
-
-    //Load PNG texture
-    rectTexture = loadTexture( "/Users/phesox/CLionProjects/2048_in104/assets/textures/rect.png" );
-    if( rectTexture == NULL )
-    {
-        printf( "Failed to load rectangle texture!\n" );
-        success = false;
-    }
-
-    return success;
-}
-bool loadMedia_number(int number, SDL_Texture** texture)
-{
-    //Loading success flag
-    bool success = true;
-    char textureText[20];
-    strcpy(textureText, "");
-    if (number != -1) { sprintf(textureText, "%d", number); }
-
-    char path[100];
-    strcpy(path,"");
-    strcat(path, "/Users/phesox/CLionProjects/2048_in104/assets/textures/numbers/");
-    strcat(path,textureText);
-    strcat(path,".png");
-    printf("%s\n",path);
-    //Load PNG texture
-    *texture = loadTexture(path);
-    if( *texture == NULL )
-    {
-        printf( "Failed to load number %d texture !\n", number);
-        success = false;
-    }
-
-    return success;
 }
 bool loadMedia(char* path, SDL_Texture** texture) {
     bool success = true;
@@ -345,18 +305,9 @@ bool loadText (char* text, SDL_Texture** textTexture, TTF_Font** textFont, char*
 bool textureInit() {
     Uint32 startTime = SDL_GetTicks();
 
-    loadMedia_rect();
-    loadMedia_number(2,&texture2);
-    loadMedia_number(4,&texture4);
-    loadMedia_number(8,&texture8);
-    loadMedia_number(16,&texture16);
-    loadMedia_number(32,&texture32);
-    loadMedia_number(64,&texture64);
-    loadMedia_number(128,&texture128);
-    loadMedia_number(256,&texture256);
-    loadMedia_number(512,&texture512);
-    loadMedia_number(1024,&texture1024);
-    loadMedia_number(2048,&texture2048);
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/rect_mega.png", &numbersTexture)) {
+        printf("Failed to load numbers texture !");
+    }
 
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/background.png", &classicBackgroundTexture)) {
         printf("Failed to load game background!");
@@ -365,12 +316,12 @@ bool textureInit() {
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/reset.png", &resetButton)) {
         printf("Failed to load reset button!");
     }
-    SDL_Color color = {0, 255, 255};
-    loadText("SCORE", &scoreHeaderTexture, &scoreFont,
-             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
-             28, color);
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/menubuttons.png",&menuButtons)) {
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/classic/score.png", &scoreBGTexture)) {
+        printf("Failed to load score background!");
+    }
+
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/buttons.png",&menuButtons)) {
         printf("Failed to load menu buttons!");
     }
 
@@ -387,6 +338,10 @@ bool textureInit() {
         printf("Failed to load cursor texture!");
     }
 
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/victory.png", &victoryTexture)) {
+        printf("Failed to load cursor texture!");
+    }
+
     Uint32 stopTime = SDL_GetTicks();
     printf("Time to load : %f s\n",(stopTime-startTime)/1000.0);
 
@@ -397,17 +352,17 @@ bool musicInit() {
 
     menuMusic = Mix_LoadMUS("/Users/phesox/CLionProjects/2048_in104/assets/audio/music/1.wav");
     if (menuMusic == NULL) {
-        printf( "Failed to load meny music! SDL_mixer Error: %s\n", Mix_GetError() );
+        printf( "Failed to load menu music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
     musicD1 = Mix_LoadMUS("/Users/phesox/CLionProjects/2048_in104/assets/audio/music/2.wav");
     if (musicD1 == NULL) {
-        printf( "Failed to load meny music! SDL_mixer Error: %s\n", Mix_GetError() );
+        printf( "Failed to load D1 music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
     musicD2 = Mix_LoadMUS("/Users/phesox/CLionProjects/2048_in104/assets/audio/music/3.wav");
     if (musicD2 == NULL) {
-        printf( "Failed to load menu music! SDL_mixer Error: %s\n", Mix_GetError() );
+        printf( "Failed to load D2 music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
 
@@ -418,12 +373,18 @@ bool musicInit() {
     }
     loose = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/loose.wav");
     if (loose == NULL) {
-        printf("Failed to load start chunk! SDL_Mixer Error: %s\n", Mix_GetError());
+        printf("Failed to load loose chunk! SDL_Mixer Error: %s\n", Mix_GetError());
         success = false;
     }
     onCombine = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/onCombine.wav");
     if (onCombine == NULL) {
-        printf("Failed to load start chunk! SDL_Mixer Error: %s\n", Mix_GetError());
+        printf("Failed to load onCombine chunk! SDL_Mixer Error: %s\n", Mix_GetError());
+        success = false;
+    }
+
+    victoryChunk = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/victory.wav");
+    if (victoryChunk == NULL) {
+        printf("Failed to load victory chunk! SDL_Mixer Error: %s\n", Mix_GetError());
         success = false;
     }
 
@@ -449,7 +410,7 @@ bool init()
         }
 
         //Create window
-        gWindow = SDL_CreateWindow( "2048!", SDL_WINDOWPOS_UNDEFINED,
+        gWindow = SDL_CreateWindow( "Super 2048!", SDL_WINDOWPOS_UNDEFINED,
                                     SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
                                     SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL );
 
@@ -498,6 +459,9 @@ bool init()
 
         textureInit();
         musicInit();
+
+        SDL_Surface* icon = IMG_Load("/Users/phesox/CLionProjects/2048_in104/assets/textures/icon.png");
+        SDL_SetWindowIcon(gWindow, icon);
     }
 
     return success;
@@ -509,6 +473,9 @@ void wclose()
     SDL_DestroyTexture(resetButton);
     SDL_DestroyTexture(menuVideo);
     SDL_DestroyTexture(menuTitle);
+    SDL_DestroyTexture(numbersTexture);
+    SDL_DestroyTexture(classicBackgroundTexture);
+    SDL_DestroyTexture(victoryTexture);
 
     Mix_FreeMusic(menuMusic);
     Mix_FreeMusic(musicD1);
@@ -520,9 +487,11 @@ void wclose()
     Mix_FreeChunk(start);
     Mix_FreeChunk(loose);
     Mix_FreeChunk(onCombine);
+    Mix_FreeChunk(victoryChunk);
     start = NULL;
     loose = NULL;
     onCombine = NULL;
+    victoryChunk = NULL;
 
     SDL_DestroyRenderer( gRenderer);
     SDL_DestroyWindow( gWindow);
@@ -539,15 +508,14 @@ void wclose()
 void classic_display(int* A, int N, int score) {
     elapsedTime=SDL_GetTicks();
     isInitial[0] = false;
-    SDL_Texture* numberTextures[] = {texture2, texture4, texture8, texture16, texture32,
-                                     texture64, texture128, texture256, texture512,texture1024,
-                                     texture2048 };
     int margin = 20;
     int rect_size = 100;
     int offsetX = SCREEN_WIDTH/2-(N*rect_size+(N+1)*margin)/2;
     int offsetY = SCREEN_HEIGHT/2-(N*rect_size+(N+1)*margin)/2;
     int* posx = malloc(sizeof(int)*N*N);
     int* posy = malloc(sizeof(int)*N*N);
+    int* srcX = malloc(sizeof(int)*16);
+    int* srcY = malloc(sizeof(int)*16);
     int* videoTextureX = malloc(sizeof(int)*107);
     int* videoTextureY = malloc(sizeof(int)*107);
 
@@ -555,6 +523,13 @@ void classic_display(int* A, int N, int score) {
         for (int j=0;j<N;j++) {
             posy[N*i+j] = offsetY+margin+(rect_size+margin)*i;
             posx[N*i+j] = offsetX+margin+(rect_size+margin)*j;
+        }
+    }
+
+    for (int i=0;i<4;i++) {
+        for (int j=0;j<4;j++) {
+            srcX[N*i+j] = 512*j;
+            srcY[N*i+j] = 512*i;
         }
     }
 
@@ -587,29 +562,32 @@ void classic_display(int* A, int N, int score) {
             int number = A[N*i+j];
 
             if (number == -1) {
+                SDL_Rect srcRect = {srcX[15], srcY[15], 512, 512};
                 SDL_Rect textureRect = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
-                SDL_RenderCopy(gRenderer, rectTexture, NULL, &textureRect);
+                SDL_RenderCopy(gRenderer, numbersTexture, &srcRect, &textureRect);
             }
             else {
                 int a = (int) (log(number)/log(2)-1);
-                SDL_Rect textureRect_text = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
-                SDL_RenderCopy(gRenderer, numberTextures[a], NULL, &textureRect_text);
+                SDL_Rect srcRect = {srcX[a], srcY[a], 512, 512};
+                SDL_Rect textureRect = {posx[N * i + j], posy[N * i + j], rect_size, rect_size};
+                SDL_RenderCopy(gRenderer, numbersTexture, &srcRect, &textureRect);
             }
         }
     }
 
-    SDL_Rect scoreHeaderRect = { offsetX+(N+2)*margin+N*rect_size, offsetY+margin, 100, 30 };
-    SDL_RenderCopy(gRenderer, scoreHeaderTexture, NULL, &scoreHeaderRect);
+    SDL_Rect scoreHeaderRect = { offsetX+(N+2)*margin+N*rect_size, offsetY, 200, 148 };
+    SDL_RenderCopy(gRenderer, scoreBGTexture, NULL, &scoreHeaderRect);
 
-    SDL_Color color = {0, 255, 255};
+    SDL_Color color = {255, 185, 167};
     char score_c[20];
     strcpy(score_c, "");
     sprintf(score_c, "%d", score);
     loadText(score_c, &scoreTexture, &scoreFont,
              "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
-             28, color);
+             50, color);
+    SDL_QueryTexture(scoreTexture, NULL, NULL, &wText, &hText);
 
-    SDL_Rect scoreRect = { offsetX+(N+2)*margin+N*rect_size, offsetY+2*margin+28, 100, 30 };
+    SDL_Rect scoreRect = { offsetX+(N+2)*margin+N*rect_size+20, offsetY+2*margin+50, wText, hText };
     SDL_RenderCopy(gRenderer, scoreTexture, NULL, &scoreRect);
 
 
@@ -722,6 +700,7 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int N, int* classi
             printf("%d", k);
         }
         spawn(N, *A);
+        vicIgnore[0] = false;
     }
     if (isInside(x,y,wButton,hButton,posx[1],posy[1]) && pressed) {
         *status = MUSIC;
@@ -764,6 +743,79 @@ void music_display() {
     Uint32 timeCount = SDL_GetTicks();
     printf("Time to render : %d ms\n",timeCount-elapsedTime);
 }
+void victory_display(int x, int y, bool pressed, enum status *status) {
+    elapsedTime=SDL_GetTicks();
+    Mix_PauseMusic();
+    Mix_PlayChannel( -1, victoryChunk, 0 );
+    int* videoTextureX = malloc(sizeof(int)*107);
+    int* videoTextureY = malloc(sizeof(int)*107);
+
+    for (int i=0;i<13;i++) {
+        for (int j=0;j<8;j++) {
+            videoTextureY[8*i+j]=1080*i;
+            videoTextureX[8*i+j]=1920*j;
+        }
+    }
+
+    for (int j=0;j<3;j++) {
+        videoTextureY[8*13+j]=1080*13;
+        videoTextureX[8*13+j]=1920*j;
+    }
+
+    SDL_SetRenderDrawColor( gRenderer, 0xFE, 0xFE, 0xE6, 0xFF );
+    SDL_RenderClear(gRenderer);
+
+    int bgFrameCounter;
+    elapsedTime = SDL_GetTicks();
+    bgFrameCounter = (int)((elapsedTime%3566)/34);
+    SDL_Rect vsrcRect = {videoTextureX[bgFrameCounter+1],videoTextureY[bgFrameCounter+1],1920,1080};
+    SDL_RenderCopy(gRenderer, menuVideo, &vsrcRect, NULL);
+
+
+    SDL_Rect vicRect = {SCREEN_WIDTH/2 - 960/2, 200, 960, 240};
+    SDL_RenderCopy(gRenderer, victoryTexture, NULL, &vicRect);
+
+    if (!isInside(x, y, 256, 64, SCREEN_WIDTH/2 - 300, 440)) {
+        SDL_Rect continueDst = {SCREEN_WIDTH/2 - 300, 440, 256, 64};
+        SDL_Rect continueSrc = { 5*1024, 0, 1024, 256};
+        SDL_RenderCopy(gRenderer, menuButtons, &continueSrc, &continueDst);
+    } else {
+        SDL_Rect continueDst = {SCREEN_WIDTH/2 - 300, 440, 256, 64};
+        SDL_Rect continueSrc = { 5*1024, 256, 1024, 256};
+        SDL_RenderCopy(gRenderer, menuButtons, &continueSrc, &continueDst);
+
+        if (pressed) {
+            *status = CLASSIC;
+            vicIgnore[0] = true;
+            Mix_ResumeMusic();
+        }
+    }
+
+    if (!isInside(x, y, 256, 64, SCREEN_WIDTH/2 + 44, 440)) {
+        SDL_Rect exitDst = {SCREEN_WIDTH/2 + 44, 440, 256, 64};
+        SDL_Rect exitSrc = { 6*1024, 0, 1024, 256};
+        SDL_RenderCopy(gRenderer, menuButtons, &exitSrc, &exitDst);
+    } else {
+        SDL_Rect exitDst = {SCREEN_WIDTH/2 + 44, 440, 256, 64};
+        SDL_Rect exitSrc = { 6*1024, 256, 1024, 256};
+        SDL_RenderCopy(gRenderer, menuButtons, &exitSrc, &exitDst);
+
+        if (pressed) {
+            *status = MENU;
+            Mix_ResumeMusic();
+        }
+    }
+
+
+
+    SDL_RenderPresent(gRenderer);
+
+    Uint32 timeCount = SDL_GetTicks();
+    printf("Time to render : %d ms\n",timeCount-elapsedTime);
+
+    free(videoTextureX);
+    free(videoTextureY);
+}
 
 
 
@@ -774,7 +826,7 @@ int main()
     srand(time(NULL));
     int N=4;
     int* gridClassic=malloc(sizeof(int)*N*N);
-    for (int i=0;i<N*N;i++) { gridClassic[i]=-1; }
+    for (int i=0;i<N*N;i++) { gridClassic[i]=256; }
     char dir;
     int classic_score = 0;
     spawn(N,gridClassic);
@@ -840,6 +892,7 @@ int main()
                 }
             }
             SDL_GetMouseState(&x, &y);
+            if (isVictory(gridClassic, N) && status==CLASSIC && !(vicIgnore[0])) { status = VICTORY; }
             switch(status){
                 case CLASSIC:
                     classic_display(gridClassic, N, classic_score);
@@ -850,12 +903,16 @@ int main()
                 case MUSIC:
                     music_display();
                     break;
+                case VICTORY:
+                    victory_display(x, y, pressed, &status);
+                    break;
                 case QUIT:
                     quit=true;
                     break;
                 default:
                     break;
             }
+
         }
     }
 

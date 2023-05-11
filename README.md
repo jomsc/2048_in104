@@ -2,17 +2,16 @@
 Par Clara Beaugrand et Joseph Mouscadet
 
 # TO-DO List :
-- Finish test
 - Dynamic mode
 - Settings page
 - N-dim mode
 - Change all path from absolute to relative
 - change controls in settings menu
-- change resolution or window size 
-- change game icon
+- change resolution or window size
 - sound
-- RESET if game is started
 - loading screen
+- mode raison d'être
+- credits (faut mettre damien)
 
 
 
@@ -24,3 +23,6 @@ Par Clara Beaugrand et Joseph Mouscadet
 - MOTD
 - Button on hover
 - 8bit sfx
+- RESET if game is started
+- change game icon
+- Finish test
