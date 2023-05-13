@@ -2,16 +2,15 @@
 Par Clara Beaugrand et Joseph Mouscadet
 
 # TO-DO List :
-- Dynamic mode
-- Settings page
+- music mode
 - N-dim mode
 - Change all path from absolute to relative
-- change controls in settings menu
-- change resolution or window size
-- sound
+
 - loading screen
 - mode raison d'être
 - credits (faut mettre damien)
+- contraction de textures
+
 
 
 
@@ -26,3 +25,5 @@ Par Clara Beaugrand et Joseph Mouscadet
 - RESET if game is started
 - change game icon
 - Finish test
+- defeat test
+- sound
