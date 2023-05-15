@@ -15,6 +15,7 @@ Uint32 elapsedTime = 0;
 Uint32 musicStartTime = 0;
 int splash = 0;
 int splashLen = 12;
+int musicMultiplier = -1;
 
 Mix_Chunk* start = NULL;
 Mix_Chunk* loose = NULL;
@@ -29,7 +30,7 @@ char MOTD[12][40] = {"By Clara and Joseph!","Music by @48Ocean","SONO approved!"
 
 int test(int x, int y) { return (x==y); }
 int f(int x, int y) { return x+y; }
-void combine(int i, char dir, int N, int* A, int* score)
+void combine(int i, char dir, int N, int* A, int* score, int multiplier)
 {
     if (dir=='r') {
         int n=0;
@@ -40,7 +41,7 @@ void combine(int i, char dir, int N, int* A, int* score)
         
         for (int k=0;k<n-1;k++) { 
             if (test(A[i*N+pos[k]],A[i*N+pos[k+1]])) {
-                *score += f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
+                *score += f(A[i*N+pos[k]],A[i*N+pos[k+1]])*(pow(2,multiplier+1));
                 A[i*N+pos[k]] = f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k+1]] = -1;
                 k++;
@@ -60,7 +61,7 @@ void combine(int i, char dir, int N, int* A, int* score)
 
         for (int k=0;k<n-1;k++) {
             if (test(A[i*N+pos[k]],A[i*N+pos[k+1]])) {
-                *score += f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
+                *score += f(A[i*N+pos[k]],A[i*N+pos[k+1]])*(pow(2,multiplier+1));
                 A[i*N+pos[k]] = f(A[i*N+pos[k]],A[i*N+pos[k+1]]);
                 A[i*N+pos[k+1]] = -1;
                 k++;
@@ -80,7 +81,7 @@ void combine(int i, char dir, int N, int* A, int* score)
 
         for (int k=0;k<n-1;k++) {
             if (test(A[pos[k]*N+i],A[pos[k+1]*N+i])) {
-                *score += f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
+                *score += f(A[pos[k]*N+i],A[pos[k+1]*N+i])*(pow(2,multiplier+1));
                 A[pos[k]*N+i] = f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k+1]*N+i] = -1;
                 k++;
@@ -100,7 +101,7 @@ void combine(int i, char dir, int N, int* A, int* score)
 
         for (int k=0;k<n-1;k++) {
             if (test(A[pos[k]*N+i],A[pos[k+1]*N+i])) {
-                *score += f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
+                *score += f(A[pos[k]*N+i],A[pos[k+1]*N+i])*(pow(2,multiplier+1));
                 A[pos[k]*N+i] = f(A[pos[k]*N+i],A[pos[k+1]*N+i]);
                 A[pos[k+1]*N+i] = -1;
                 k++;
@@ -154,9 +155,9 @@ void collapse(int i, char dir, int N, int* A)
         }
     }
 }
-void move(int N, char dir, int* A, int* score) {
+void move(int N, char dir, int* A, int* score, int multiplier) {
     for (int i=0;i<N;i++) {
-        combine(i,dir,N,A,score);
+        combine(i,dir,N,A,score, multiplier);
         collapse(i,dir,N,A);
     }
 }
@@ -199,7 +200,6 @@ bool isDefeat (int* A, int N) {
 
     return defeat;
 }
-
 bool isInside(int x, int y, int w, int h, int a, int b) {
     return ((x<=(a+w) && x>=a) && (y<=(b+h) && y>= b));
 }
@@ -219,6 +219,7 @@ SDL_Texture* resetButton = NULL;
 SDL_Texture* menuTitle = NULL;
 SDL_Texture* victoryTexture = NULL;
 SDL_Texture* defeatTexture = NULL;
+SDL_Texture* multiplierTexture = NULL;
 
 SDL_Texture* classicBackgroundTexture = NULL;
 SDL_Texture* numbersTexture = NULL;
@@ -236,7 +237,7 @@ SDL_Texture* diff_buttons = NULL;
 SDL_Texture* barreTexture = NULL;
 
 bool isInitial[3] = {true, true, true};
-bool vicIgnore = false;
+bool vicIgnore[3] = {false, false, false};
 
 
 SDL_Texture* loadTexture(char *path) {
@@ -363,6 +364,10 @@ bool textureInit() {
 
     if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/music/barre.png", &barreTexture)) {
         printf("Failed to load barre texture!");
+    }
+
+    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/multiplier.png", &multiplierTexture)) {
+        printf("Failed to load multiplier texture!");
     }
 
     Uint32 stopTime = SDL_GetTicks();
@@ -625,7 +630,7 @@ void classic_display(int* A, int N, int score) {
     free(videoTextureX);
     free(videoTextureY);
 }
-void menu_display(SDL_Event e, enum status *status, int* A[], int N, int* score, int x, int y, bool pressed) {
+void menu_display(SDL_Event e, enum status *status, int* A[], int* B[], int N, int* score, int x, int y, bool clicked, int* musicScore) {
     elapsedTime = SDL_GetTicks();
     int nb_buttons=10;
     int initialMargin = 250;
@@ -687,6 +692,13 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int N, int* score,
                     SDL_RenderCopy(gRenderer, resetButton, NULL, &resetRect);
                 }
             }
+
+            if (i==1) {
+                if (!isInitial[i]) {
+                    SDL_Rect resetRect = { posx[i]+wButton+margin, posy[i], hButton, hButton};
+                    SDL_RenderCopy(gRenderer, resetButton, NULL, &resetRect);
+                }
+            }
         }
     }
 
@@ -714,11 +726,11 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int N, int* score,
         }
     }
 
-    if (isInside(x,y,wButton,hButton,posx[0],posy[0]) && pressed) {
+    if (isInside(x,y,wButton,hButton,posx[0],posy[0]) && clicked) {
         *status = CLASSIC;
         Mix_PlayChannel( 3, start, 0 );
     }
-    if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitial[0] && pressed) {
+    if (isInside(x,y,hButton,hButton,posx[0]+wButton+margin,posy[0]) && !isInitial[0] && clicked) {
         isInitial[0] = true;
         *score = 0;
         for (int k=0;k<(N*N);k++) {
@@ -726,17 +738,28 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int N, int* score,
             printf("%d", k);
         }
         spawn(N, *A);
-        vicIgnore = false;
+        vicIgnore[0] = false;
     }
-    if (isInside(x,y,wButton,hButton,posx[1],posy[1]) && pressed) {
+    if (isInside(x,y,hButton,hButton,posx[1]+wButton+margin,posy[1]) && !isInitial[1] && clicked) {
+        isInitial[1] = true;
+        *musicScore = 0;
+        for (int k=0;k<(N*N);k++) {
+            (*B)[k]=-1;
+            printf("%d", k);
+        }
+        spawn(N, *B);
+        vicIgnore[1] = false;
+        musicMultiplier=-1;
+    }
+    if (isInside(x,y,wButton,hButton,posx[1],posy[1]) && clicked) {
         *status = DIFFICULTY;
         Mix_PlayChannel( -1, start, 0 );
     }
-    if (isInside(x,y,wButton,hButton,posx[2],posy[2]) && pressed) {
+    if (isInside(x,y,wButton,hButton,posx[2],posy[2]) && clicked) {
         *status = NDIM;
         Mix_PlayChannel( -1, start, 0 );
     }
-    if (isInside(x,y,wButton,hButton,posx[4],posy[4]) && pressed) { *status = QUIT; }
+    if (isInside(x,y,wButton,hButton,posx[4],posy[4]) && clicked) { *status = QUIT; }
 
     SDL_RenderPresent(gRenderer);
 
@@ -753,10 +776,10 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int N, int* score,
     Uint32 timeCount = SDL_GetTicks();
     printf("Time to render : %d ms\n",timeCount-elapsedTime);
 }
-void music_display(int difficulty, int* A, int N, int score) {
+void music_display(int difficulty, int* A, int N, int score, bool *pressed, int *multiplier) {
     elapsedTime = SDL_GetTicks();
 
-    isInitial[0] = false;
+    isInitial[1] = false;
     int margin = 20;
     int rect_size = 100;
     int offsetX = SCREEN_WIDTH/2-(N*rect_size+(N+1)*margin)/2;
@@ -815,7 +838,7 @@ void music_display(int difficulty, int* A, int N, int score) {
     }
     double speed = bpm/120.0;
     Uint32 timeTime = SDL_GetTicks();
-    int cursorX = SCREEN_WIDTH/2-256+487*(((int)(2*speed*(timeTime-musicStartTime)))%1000)/1000.0;
+    int cursorX = SCREEN_WIDTH/2-256+487*(((int)(2*speed*(timeTime-musicStartTime-200)))%1000)/1000.0;
     printf("cursorX : %d\n", cursorX);
 
     SDL_Rect cursorRect = { cursorX, 582, 25, 100 };
@@ -825,10 +848,26 @@ void music_display(int difficulty, int* A, int N, int score) {
         SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
     }
 
+    if (*pressed) {
+        if (cursorX<(215+SCREEN_WIDTH/2-256) && cursorX ) {
+            if (*multiplier > 0) { *multiplier = *multiplier-2; }
+            else { *multiplier = -1; }
+        }
+        if (cursorX<(300+SCREEN_WIDTH/2-256)) {
+            if (*multiplier > -1) { (*multiplier)--; }
+        }
+        else {
+            if ((*multiplier)<7) { (*multiplier)++; }
+            else { *multiplier=7; }
+        }
+    }
+    *pressed = false;
+
     SDL_RenderFillRect( gRenderer, &cursorRect );
 
     SDL_Rect backgroundRect = { offsetX, offsetY, N*rect_size+(N+1)*margin, N*rect_size+(N+1)*margin};
     SDL_RenderCopy(gRenderer, classicBackgroundTexture, NULL, &backgroundRect);
+
 
     for (int i=0;i<N;i++) {
         for (int j=0;j<N;j++) {
@@ -863,7 +902,13 @@ void music_display(int difficulty, int* A, int N, int score) {
     SDL_Rect scoreRect = { offsetX+(N+2)*margin+N*rect_size+20, offsetY+2*margin+50, wText, hText };
     SDL_RenderCopy(gRenderer, scoreTexture, NULL, &scoreRect);
 
-
+    double size = (sin(((int)(4*speed*elapsedTime)%2000)/314.0)+10)*0.1;
+    if (*multiplier != -1) {
+        SDL_Rect multiSrc = { (*multiplier)*256, 0, 256, 256};
+        SDL_Rect multiDst = { 150+ offsetX+(N+2)*margin+N*rect_size, offsetY+2*margin+70, size*120, size*100};
+        SDL_RenderCopyEx(gRenderer, multiplierTexture, &multiSrc,
+                         &multiDst,20,NULL,SDL_FLIP_NONE);
+    }
     SDL_RenderPresent(gRenderer);
 
     Uint32 timeCount = SDL_GetTicks();
@@ -874,7 +919,7 @@ void music_display(int difficulty, int* A, int N, int score) {
     free(videoTextureX);
     free(videoTextureY);
 }
-void victory_display(int x, int y, bool pressed, enum status *status) {
+void victory_display(int x, int y, bool clicked, enum status *status, int previous) {
     elapsedTime=SDL_GetTicks();
     Mix_PauseMusic();
     Mix_PlayChannel( -1, victoryChunk, 0 );
@@ -915,9 +960,15 @@ void victory_display(int x, int y, bool pressed, enum status *status) {
         SDL_Rect continueSrc = { 5*1024, 256, 1024, 256};
         SDL_RenderCopy(gRenderer, menuButtons, &continueSrc, &continueDst);
 
-        if (pressed) {
-            *status = CLASSIC;
-            vicIgnore = true;
+        if (clicked) {
+            if (previous==1) {
+                *status = CLASSIC;
+                vicIgnore[0] = true;
+            }
+            if (previous==2) {
+                *status = MUSIC;
+                vicIgnore[1] = true;
+            }
             Mix_ResumeMusic();
         }
     }
@@ -931,7 +982,7 @@ void victory_display(int x, int y, bool pressed, enum status *status) {
         SDL_Rect exitSrc = { 6*1024, 256, 1024, 256};
         SDL_RenderCopy(gRenderer, menuButtons, &exitSrc, &exitDst);
 
-        if (pressed) {
+        if (clicked) {
             *status = MENU;
             Mix_ResumeMusic();
         }
@@ -947,7 +998,7 @@ void victory_display(int x, int y, bool pressed, enum status *status) {
     free(videoTextureX);
     free(videoTextureY);
 }
-void defeat_display(int x, int y, bool pressed, enum status *status, int* A[], int N, int* score) {
+void defeat_display(int x, int y, bool clicked, enum status *status, int* A[], int* B[], int N, int* score, int previous) {
     elapsedTime=SDL_GetTicks();
     Mix_PauseMusic();
     Mix_PlayChannel( -1, loose, 0 );
@@ -987,13 +1038,24 @@ void defeat_display(int x, int y, bool pressed, enum status *status, int* A[], i
         SDL_Rect exitSrc = { 6*1024, 256, 1024, 256};
         SDL_RenderCopy(gRenderer, menuButtons, &exitSrc, &exitDst);
 
-        if (pressed) {
-            *status = MENU;
-            Mix_ResumeMusic();
-            for (int i=0;i<N*N;i++) { (*A)[i]=-1; }
-            *score = 0;
-            spawn(N, *A);
-            isInitial[0] = true;
+        if (clicked) {
+            if (previous==1) {
+                *status = MENU;
+                Mix_ResumeMusic();
+                for (int i=0;i<N*N;i++) { (*A)[i]=-1; }
+                *score = 0;
+                spawn(N, *A);
+                isInitial[0] = true;
+            }
+
+            if (previous==2) {
+                *status = MENU;
+                Mix_ResumeMusic();
+                for (int i=0;i<N*N;i++) { (*B)[i]=-1; }
+                *score = 0;
+                spawn(N, *B);
+                isInitial[1] = true;
+            }
         }
     }
 
@@ -1005,7 +1067,7 @@ void defeat_display(int x, int y, bool pressed, enum status *status, int* A[], i
     free(videoTextureX);
     free(videoTextureY);
 }
-void diff_display(int x, int y, bool pressed, enum status *status, int *difficulty) {
+void diff_display(int x, int y, bool clicked, enum status *status, int *difficulty) {
     elapsedTime=SDL_GetTicks();
     int* videoTextureX = malloc(sizeof(int)*107);
     int* videoTextureY = malloc(sizeof(int)*107);
@@ -1040,7 +1102,7 @@ void diff_display(int x, int y, bool pressed, enum status *status, int *difficul
         SDL_Rect midSrc = { 0, 256, 1024, 256};
         SDL_RenderCopy(gRenderer, diff_buttons, &midSrc, &midDst);
 
-        if (pressed) {
+        if (clicked) {
             *status = MUSIC;
             *difficulty = 1;
             Mix_HaltMusic();
@@ -1058,7 +1120,7 @@ void diff_display(int x, int y, bool pressed, enum status *status, int *difficul
         SDL_Rect hardSrc = { 1024, 256, 1024, 256};
         SDL_RenderCopy(gRenderer, diff_buttons, &hardSrc, &hardDst);
 
-        if (pressed) {
+        if (clicked) {
             *status = MUSIC;
             *difficulty = 2;
             Mix_HaltMusic();
@@ -1082,14 +1144,20 @@ int main()
 
     srand(time(NULL));
     int N=4;
-    int* grid=malloc(sizeof(int)*N*N);
-    for (int i=0;i<N*N;i++) { grid[i]=-1; }
+    int* gridClassic=malloc(sizeof(int)*N*N);
+    for (int i=0;i<N*N;i++) { gridClassic[i]=512; }
+    int* gridMusic=malloc(sizeof(int)*N*N);
+    for (int i=0;i<N*N;i++) { gridMusic[i]=512; }
     char dir;
     int score = 0;
+    int musicScore = 0;
     int difficulty = 1;
-    spawn(N,grid);
+    int previous=1;
+    spawn(N,gridClassic);
+    spawn(N,gridMusic);
 
     int x, y;
+    bool clicked = false;
     bool pressed = false;
 
     if( !init() )
@@ -1105,13 +1173,14 @@ int main()
         while( !quit )
         {
             elapsedTime = SDL_GetTicks();
-            pressed = false;
+            clicked = false;
 
             while( SDL_PollEvent( &e ) ) {
                 if (e.type == SDL_QUIT) {
                     quit = true;
                 }
                 if (e.type == SDL_KEYDOWN) {
+                    pressed = true;
                     switch (e.key.keysym.sym) {
                         case SDLK_z:
                             dir = 'u';
@@ -1140,36 +1209,44 @@ int main()
                             dir = 'x';
                             break;
                     }
-                    if (dir != 'x' && (status == CLASSIC || status == MUSIC)) {
-                        move(N, dir, grid, &score);
-                        spawn(N, grid);
+                    if (dir != 'x' && (status == CLASSIC)) {
+                        move(N, dir, gridClassic, &score, -1);
+                        spawn(N, gridClassic);
+                    }
+                    if (dir != 'x' && (status == MUSIC)) {
+                        move(N, dir, gridMusic, &score, musicMultiplier);
+                        spawn(N, gridMusic);
                     }
                 }
                 if (e.type == SDL_MOUSEBUTTONDOWN) {
-                    pressed = true;
+                    clicked = true;
                 }
             }
             SDL_GetMouseState(&x, &y);
-            if (isVictory(grid, N) && (status==CLASSIC || status==MUSIC) && !vicIgnore) { status = VICTORY; }
-            if (isDefeat(grid, N) && (status==CLASSIC || status==MUSIC)) { status = DEFEAT; }
+            if (isVictory(gridClassic, N) && status==CLASSIC && !vicIgnore[0]) { status = VICTORY; previous=1;}
+            if (isDefeat(gridClassic, N) && status==CLASSIC) { status = DEFEAT; previous=1; }
+
+            if (isVictory(gridMusic, N) && status==MUSIC && !vicIgnore[1]) { status = VICTORY; previous=2; }
+            if (isDefeat(gridMusic, N) && status==MUSIC) { status = DEFEAT; previous=2; }
+
             switch(status){
                 case CLASSIC:
-                    classic_display(grid, N, score);
+                    classic_display(gridClassic, N, score);
                     break;
                 case MENU:
-                    menu_display(e, &status, &grid, N, &score, x, y, pressed);
+                    menu_display(e, &status, &gridClassic, &gridMusic, N, &score, x, y, clicked, &musicScore);
                     break;
                 case MUSIC:
-                    music_display(difficulty, grid, N, score);
+                    music_display(difficulty, gridMusic, N, score, &pressed, &musicMultiplier);
                     break;
                 case VICTORY:
-                    victory_display(x, y, pressed, &status);
+                    victory_display(x, y, clicked, &status, previous);
                     break;
                 case DEFEAT:
-                    defeat_display(x, y, pressed, &status, &grid, N, &score);
+                    defeat_display(x, y, clicked, &status, &gridClassic, &gridMusic, N, &score, previous);
                     break;
                 case DIFFICULTY:
-                    diff_display(x, y, pressed, &status, &difficulty);
+                    diff_display(x, y, clicked, &status, &difficulty);
                     break;
                 case QUIT:
                     quit=true;
@@ -1179,7 +1256,7 @@ int main()
             }
 
         }
-    }
+        }
 
     wclose();
 

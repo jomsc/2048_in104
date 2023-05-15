@@ -2,18 +2,10 @@
 Par Clara Beaugrand et Joseph Mouscadet
 
 # TO-DO List :
-- music mode
 - N-dim mode
 - Change all path from absolute to relative
-
 - loading screen
-- mode raison d'être
-- credits (faut mettre damien)
 - contraction de textures
-
-
-
-
 
 # DONE LIST
 - Recode texture loading process to optimize the game
@@ -27,3 +19,4 @@ Par Clara Beaugrand et Joseph Mouscadet
 - Finish test
 - defeat test
 - sound
+- music mode
