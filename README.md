@@ -2,9 +2,8 @@
 Par Clara Beaugrand et Joseph Mouscadet
 
 # TO-DO List :
-- N-dim mode
+
 - Change all path from absolute to relative
-- loading screen
 - contraction de textures
 
 # DONE LIST
@@ -20,3 +19,4 @@ Par Clara Beaugrand et Joseph Mouscadet
 - defeat test
 - sound
 - music mode
+- N-dim mode
