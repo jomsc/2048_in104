@@ -579,8 +579,8 @@ void classic_display(int* A, int N, int score) {
 
     for (int i=0;i<4;i++) {
         for (int j=0;j<4;j++) {
-            srcX[N*i+j] = 512*j;
-            srcY[N*i+j] = 512*i;
+            srcX[4*i+j] = 512*j;
+            srcY[4*i+j] = 512*i;
         }
     }
 
@@ -786,11 +786,8 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int* B[], int* C[]
     if (isInside(x,y,hButton,hButton,posx[2]+wButton+margin,posy[2]) && !isInitial[2] && clicked) {
         isInitial[2] = true;
         *ndimscore = 0;
-        for (int k=0;k<(dim_grid*dim_grid);k++) {
-            (*C)[k]=-1;
-            printf("%d", k);
-        }
-        spawn(dim_grid, *C);
+        free((*C));
+        (*C)=NULL;
         vicIgnore[2] = false;
         musicMultiplier=-1;
     }
@@ -1269,8 +1266,11 @@ void ndim_select_display(int *dim_grid, int x, int y, bool clicked, enum status*
             if (clicked) {
                 *status = NDIM;
                 if (*A==NULL) {
-                    //(*A)=malloc(sizeof(int)*(*dim_grid)*(*dim_grid));
-                    //for (int i=0;i<(*dim_grid)*(*dim_grid);i++) { (*A)[i] = -1; }
+                    free((*A));
+                    (*A)=malloc(sizeof(int)*(*dim_grid)*(*dim_grid));
+                    for (int i=0;i<(*dim_grid)*(*dim_grid);i++) {
+                        (*A)[i] = -1;
+                    }
                     spawn(*dim_grid, *A);
                 }
             }
@@ -1289,9 +1289,13 @@ void ndim_select_display(int *dim_grid, int x, int y, bool clicked, enum status*
 void ndim_display(int* A, int N, int score) {
     isInitial[2] = false;
     elapsedTime=SDL_GetTicks();
-    int rect_size=100;
+    int width = 600;
+    int margin = 50/N;
+    int rect_size=(int)((width-(N-1)*margin-2*20)/N);
     SDL_SetRenderDrawColor( gRenderer, 0xFE, 0xFE, 0xE6, 0xFF );
     SDL_RenderClear(gRenderer);
+    int offsetX=SCREEN_WIDTH/2-width/2;
+    int offsetY=SCREEN_HEIGHT/2-width/2;
 
     int* srcX = malloc(sizeof(int)*16);
     int* srcY = malloc(sizeof(int)*16);
@@ -1314,8 +1318,8 @@ void ndim_display(int* A, int N, int score) {
 
     for (int i=0;i<4;i++) {
         for (int j=0;j<4;j++) {
-            srcX[N*i+j] = 512*j;
-            srcY[N*i+j] = 512*i;
+            srcX[4*i+j] = 512*j;
+            srcY[4*i+j] = 512*i;
         }
     }
 
@@ -1325,27 +1329,47 @@ void ndim_display(int* A, int N, int score) {
     SDL_Rect vsrcRect = {videoTextureX[bgFrameCounter+1],videoTextureY[bgFrameCounter+1],1920,1080};
     SDL_RenderCopy(gRenderer, menuVideo, &vsrcRect, NULL);
 
-    /*
+    SDL_Rect backgroundRect = { offsetX, offsetY, width, width };
+    SDL_RenderCopy(gRenderer, classicBackgroundTexture, NULL, &backgroundRect);
+
+
     for (int i=0;i<N;i++) {
         for (int j=0;j<N;j++) {
             int number = A[N*i+j];
             printf("%d   |",number);
+
             if (number == -1) {
                 SDL_Rect srcRect = {srcX[15], srcY[15], 512, 512};
-                SDL_Rect textureRect = {j*rect_size, i*rect_size, rect_size, rect_size};
+                SDL_Rect textureRect = {offsetX+j*rect_size+j*margin+20, offsetY+i*rect_size+i*margin+20,
+                                        rect_size, rect_size};
                 SDL_RenderCopy(gRenderer, numbersTexture, &srcRect, &textureRect);
             }
             else {
                 int a = (int)(log(number)/log(2)-1);
                 SDL_Rect srcRect = {srcX[a], srcY[a], 512, 512};
-                SDL_Rect textureRect = {j*rect_size, i*rect_size, rect_size, rect_size};
+                SDL_Rect textureRect = {offsetX+j*rect_size+j*margin+20, offsetY+i*rect_size+i*margin+20,
+                                        rect_size, rect_size};
                 SDL_RenderCopy(gRenderer, numbersTexture, &srcRect, &textureRect);
             }
         }
         printf("\n");
     }
 
-    */
+    SDL_Rect scoreHeaderRect = { offsetX+(N-1)*margin+N*rect_size+2*20+30, offsetY, 200, 148 };
+    SDL_RenderCopy(gRenderer, scoreBGTexture, NULL, &scoreHeaderRect);
+
+    SDL_Color color = {255, 185, 167};
+    char score_c[20];
+    strcpy(score_c, "");
+    sprintf(score_c, "%d", score);
+    loadText(score_c, &scoreTexture, &scoreFont,
+             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+             50, color);
+    SDL_QueryTexture(scoreTexture, NULL, NULL, &wText, &hText);
+    SDL_Rect scoreRect = { offsetX+(N-1)*margin+N*rect_size+2*20+40, offsetY+90, wText, hText };
+    SDL_RenderCopy(gRenderer, scoreTexture, NULL, &scoreRect);
+
+
 
     SDL_RenderPresent(gRenderer);
     Uint32 timeCount = SDL_GetTicks();
@@ -1370,8 +1394,7 @@ int main()
     int* gridMusic=malloc(sizeof(int)*N*N);
     for (int i=0;i<N*N;i++) { gridMusic[i]=-1; }
 
-    int* gridNdim=malloc(sizeof(int)*100);
-    for (int i=0;i<N*N;i++) { gridMusic[i]=-1; }
+    int* gridNdim = NULL;
 
     char dir;
 
@@ -1466,7 +1489,7 @@ int main()
 
             if (gridNdim!=NULL) {
                 if (isVictory(gridNdim, dim_grid) && status==NDIM && !vicIgnore[2]) { status = VICTORY; previous=3; }
-                if (isDefeat(gridNdim, dim_grid) && status==NDIM) { status = NDIM; previous=3; }
+                if (isDefeat(gridNdim, dim_grid) && status==NDIM) { status = DEFEAT; previous=3; }
             }
 
             switch(status){
@@ -1497,7 +1520,7 @@ int main()
                     ndim_select_display(&dim_grid, x, y, clicked, &status, &gridNdim);
                     break;
                 case NDIM:
-                    //ndim_display(gridNdim, dim_grid, ndimscore);
+                    ndim_display(gridNdim, dim_grid, ndimscore);
                     //classic_display(gridNdim, dim_grid, ndimscore);
                     break;
                 default:

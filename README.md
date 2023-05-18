@@ -4,7 +4,6 @@ Par Clara Beaugrand et Joseph Mouscadet
 # TO-DO List :
 
 - Change all path from absolute to relative
-- contraction de textures
 
 # DONE LIST
 - Recode texture loading process to optimize the game
