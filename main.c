@@ -331,64 +331,64 @@ bool loadText (char* text, SDL_Texture** textTexture, TTF_Font** textFont, char*
 bool textureInit() {
     Uint32 startTime = SDL_GetTicks();
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/rect_mega.png", &numbersTexture)) {
+    if (!loadMedia("../../assets/textures/rect_mega.png", &numbersTexture)) {
         printf("Failed to load numbers texture !");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/background.png", &classicBackgroundTexture)) {
+    if (!loadMedia("../../assets/textures/background.png", &classicBackgroundTexture)) {
         printf("Failed to load game background!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/reset.png", &resetButton)) {
+    if (!loadMedia("../../assets/textures/reset.png", &resetButton)) {
         printf("Failed to load reset button!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/classic/score.png", &scoreBGTexture)) {
+    if (!loadMedia("../../assets/textures/classic/score.png", &scoreBGTexture)) {
         printf("Failed to load score background!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/buttons.png",&menuButtons)) {
+    if (!loadMedia("../../assets/textures/buttons.png",&menuButtons)) {
         printf("Failed to load menu buttons!");
     }
 
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/videos/menu/out.jpeg",&menuVideo)) {
+    if (!loadMedia("../../assets/videos/menu/out.jpeg",&menuVideo)) {
         printf("coup dur");
     }
     printf("loaded video");
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/title.png", &menuTitle)) {
+    if (!loadMedia("../../assets/textures/title.png", &menuTitle)) {
         printf("Failed to load title texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/victory.png", &victoryTexture)) {
+    if (!loadMedia("../../assets/textures/victory.png", &victoryTexture)) {
         printf("Failed to load victory texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/defeat.png", &defeatTexture)) {
+    if (!loadMedia("../../assets/textures/defeat.png", &defeatTexture)) {
         printf("Failed to load defeat texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/diff_select.png", &diff_buttons)) {
+    if (!loadMedia("../../assets/textures/diff_select.png", &diff_buttons)) {
         printf("Failed to load difficulty buttons texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/music/barre.png", &barreTexture)) {
+    if (!loadMedia("../../assets/textures/music/barre.png", &barreTexture)) {
         printf("Failed to load barre texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/multiplier.png", &multiplierTexture)) {
+    if (!loadMedia("../../assets/textures/multiplier.png", &multiplierTexture)) {
         printf("Failed to load multiplier texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/arrowup.png", &arrowUp)) {
+    if (!loadMedia("../../assets/textures/arrowup.png", &arrowUp)) {
         printf("Failed to load arrowUp texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/arrowdown.png", &arrowDown)) {
+    if (!loadMedia("../../assets/textures/arrowdown.png", &arrowDown)) {
         printf("Failed to load arrowDown texture!");
     }
 
-    if (!loadMedia("/Users/phesox/CLionProjects/2048_in104/assets/textures/go.png", &goTexture)) {
+    if (!loadMedia("../../assets/textures/go.png", &goTexture)) {
         printf("Failed to load go texture!");
     }
 
@@ -400,39 +400,39 @@ bool textureInit() {
 bool musicInit() {
     bool success = true;
 
-    menuMusic = Mix_LoadMUS("/Users/phesox/CLionProjects/2048_in104/assets/audio/music/1.wav");
+    menuMusic = Mix_LoadMUS("../../assets/audio/music/1.wav");
     if (menuMusic == NULL) {
         printf( "Failed to load menu music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
-    musicD1 = Mix_LoadMUS("/Users/phesox/CLionProjects/2048_in104/assets/audio/music/2.wav");
+    musicD1 = Mix_LoadMUS("../../assets/audio/music/2.wav");
     if (musicD1 == NULL) {
         printf( "Failed to load D1 music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
-    musicD2 = Mix_LoadMUS("/Users/phesox/CLionProjects/2048_in104/assets/audio/music/3.wav");
+    musicD2 = Mix_LoadMUS("../../assets/audio/music/3.wav");
     if (musicD2 == NULL) {
         printf( "Failed to load D2 music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
 
-    start = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/start.wav");
+    start = Mix_LoadWAV("../../assets/audio/chunk/start.wav");
     if (start == NULL) {
         printf("Failed to load start chunk! SDL_Mixer Error: %s\n", Mix_GetError());
         success = false;
     }
-    loose = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/loose.wav");
+    loose = Mix_LoadWAV("../../assets/audio/chunk/loose.wav");
     if (loose == NULL) {
         printf("Failed to load loose chunk! SDL_Mixer Error: %s\n", Mix_GetError());
         success = false;
     }
-    onCombine = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/onCombine.wav");
+    onCombine = Mix_LoadWAV("../../assets/audio/chunk/onCombine.wav");
     if (onCombine == NULL) {
         printf("Failed to load onCombine chunk! SDL_Mixer Error: %s\n", Mix_GetError());
         success = false;
     }
 
-    victoryChunk = Mix_LoadWAV("/Users/phesox/CLionProjects/2048_in104/assets/audio/chunk/victory.wav");
+    victoryChunk = Mix_LoadWAV("../../assets/audio/chunk/victory.wav");
     if (victoryChunk == NULL) {
         printf("Failed to load victory chunk! SDL_Mixer Error: %s\n", Mix_GetError());
         success = false;
@@ -510,7 +510,7 @@ bool init()
         textureInit();
         musicInit();
 
-        SDL_Surface* icon = IMG_Load("/Users/phesox/CLionProjects/2048_in104/assets/textures/icon.png");
+        SDL_Surface* icon = IMG_Load("../../assets/textures/icon.png");
         SDL_SetWindowIcon(gWindow, icon);
     }
 
@@ -634,7 +634,7 @@ void classic_display(int* A, int N, int score) {
     strcpy(score_c, "");
     sprintf(score_c, "%d", score);
     loadText(score_c, &scoreTexture, &scoreFont,
-             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+             "../../assets/fonts/ITCAvantGardeStd-Bold.ttf",
              50, color);
     SDL_QueryTexture(scoreTexture, NULL, NULL, &wText, &hText);
 
@@ -737,7 +737,7 @@ void menu_display(SDL_Event e, enum status *status, int* A[], int* B[], int* C[]
     // MOTD
     SDL_Color splashColor = { 255, 255, 0};
     if (!loadText(MOTD[splash],&splashTexture,&splashFont,
-                  "/Users/phesox/CLionProjects/2048_in104/assets/fonts/minecraft_font.ttf",
+                  "../../assets/fonts/minecraft_font.ttf",
                   60,splashColor)) {
         printf("failed to load MOTD");
     }
@@ -936,7 +936,7 @@ void music_display(int difficulty, int* A, int N, int score, bool *pressed, int 
     strcpy(score_c, "");
     sprintf(score_c, "%d", score);
     loadText(score_c, &scoreTexture, &scoreFont,
-             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+             "../../assets/fonts/ITCAvantGardeStd-Bold.ttf",
              50, color);
     SDL_QueryTexture(scoreTexture, NULL, NULL, &wText, &hText);
 
@@ -1236,7 +1236,7 @@ void ndim_select_display(int *dim_grid, int x, int y, bool clicked, enum status*
         strcpy(dim_c, "");
         sprintf(dim_c, "%d", *dim_grid);
         loadText(dim_c, &dimTexture, &scoreFont,
-                 "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+                 "../../assets/fonts/ITCAvantGardeStd-Bold.ttf",
                  200, color);
         SDL_QueryTexture(dimTexture, NULL, NULL, &wText, &hText);
 
@@ -1363,7 +1363,7 @@ void ndim_display(int* A, int N, int score) {
     strcpy(score_c, "");
     sprintf(score_c, "%d", score);
     loadText(score_c, &scoreTexture, &scoreFont,
-             "/Users/phesox/CLionProjects/2048_in104/assets/fonts/ITCAvantGardeStd-Bold.ttf",
+             "../../assets/fonts/ITCAvantGardeStd-Bold.ttf",
              50, color);
     SDL_QueryTexture(scoreTexture, NULL, NULL, &wText, &hText);
     SDL_Rect scoreRect = { offsetX+(N-1)*margin+N*rect_size+2*20+40, offsetY+90, wText, hText };
